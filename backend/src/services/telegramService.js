@@ -72,14 +72,28 @@ class TelegramService {
             message += `📋 <b>Category:</b> ${complaint.ComplaintCategory.name}\n`;
         }
 
-        if (complaint.customerInfo?.BillStatus) {
-            const billStatusEmoji = complaint.customerInfo.BillStatus === 'Bill Start' ? '✅' :
-                                   complaint.customerInfo.BillStatus === 'Bill Stop' ? '❌' : '⚠️';
-            message += `${billStatusEmoji} <b>Bill Status:</b> ${complaint.customerInfo.BillStatus}\n`;
-        }
-
         if (complaint.agent?.fullName) {
             message += `👨‍💼 <b>Assigned To:</b> ${complaint.agent.fullName}\n`;
+        }
+
+        // Connection Details
+        if (complaint.customerInfo) {
+            message += `\n⚡ <b>Connection Details:</b>\n`;
+            message += `   • Tariff: ${complaint.customerInfo.Tariff || 'N/A'}\n`;
+            message += `   • Phase: ${complaint.customerInfo.Phase || 'N/A'}\n`;
+            message += `   • Sanction Load: ${complaint.customerInfo.SanctionLoad || 'N/A'}\n`;
+            if (complaint.customerInfo.ConnectionDate) {
+                message += `   • Connection Date: ${new Date(complaint.customerInfo.ConnectionDate).toLocaleDateString()}\n`;
+            } else {
+                message += `   • Connection Date: N/A\n`;
+            }
+        }
+
+        // Location
+        if (complaint.customerInfo) {
+            message += `\n📍 <b>Location:</b>\n`;
+            message += `   • NOCS: ${complaint.customerInfo.NOCSName || 'N/A'}\n`;
+            message += `   • Feeder: ${complaint.customerInfo.FeederName || complaint.customerInfo.FeederNo || 'N/A'}\n`;
         }
 
         // BILL STOP SPECIFIC INFORMATION
