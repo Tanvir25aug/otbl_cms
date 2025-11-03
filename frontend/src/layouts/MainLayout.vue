@@ -27,7 +27,7 @@
         </div>
         <nav class="sidebar__nav">
           <ul class="sidebar__menu">
-            <li class="sidebar__item">
+            <li class="sidebar__item" v-if="auth.isAuthenticated">
               <router-link to="/dashboard" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path === '/dashboard' }" @click="closeSidebarOnMobile">
                 <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
