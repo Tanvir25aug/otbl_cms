@@ -80,12 +80,14 @@ class TelegramBotService {
                             '   • CSV/TXT - Meter reading data\n\n' +
                             '🔍 <b>Customer Information:</b>\n' +
                             '   • Send a customer number or meter number\n' +
-                            '   • Example: 10891641\n\n' +
+                            '   • Example: 10891641\n' +
+                            '   • Multiple: 33008307,11260401,35276447\n' +
+                            '   • (Max 10 customers at once)\n\n' +
                             'Try uploading a file or sending a customer number!',
                             { parse_mode: 'HTML' }
                         );
-                    } else if (msg.text.match(/^\d+$/)) {
-                        // Handle customer number query (numeric only)
+                    } else if (msg.text.match(/^[\d,\s]+$/)) {
+                        // Handle customer number query (numeric with optional commas and spaces)
                         await this.handleCustomerQuery(msg);
                     }
                 }
@@ -227,19 +229,35 @@ class TelegramBotService {
     }
 
     /**
-     * Handle customer number query
+     * Handle customer number query (single or multiple comma-separated)
      */
     async handleCustomerQuery(msg) {
         const chatId = msg.chat.id;
-        const searchValue = msg.text.trim();
+        const searchText = msg.text.trim();
 
-        console.log(`🔍 Customer query received: ${searchValue} from chat ${chatId}`);
+        // Split by comma and trim whitespace from each value
+        const searchValues = searchText.split(',').map(v => v.trim()).filter(v => v.length > 0);
+
+        console.log(`🔍 Customer query received: ${searchValues.join(', ')} from chat ${chatId}`);
+
+        // Limit to max 10 customers to prevent abuse
+        if (searchValues.length > 10) {
+            await this.bot.sendMessage(
+                chatId,
+                `⚠️ <b>Too Many Requests</b>\n\n` +
+                `You requested ${searchValues.length} customers, but the limit is 10 per request.\n\n` +
+                `Please split your request into smaller batches.`,
+                { parse_mode: 'HTML' }
+            );
+            return;
+        }
 
         try {
             // Send searching message
+            const customerText = searchValues.length === 1 ? 'customer' : `${searchValues.length} customers`;
             await this.bot.sendMessage(
                 chatId,
-                `🔍 Searching for customer: <b>${searchValue}</b>\n\nPlease wait...`,
+                `🔍 Searching for ${customerText}...\n\nPlease wait...`,
                 { parse_mode: 'HTML' }
             );
 
@@ -247,144 +265,183 @@ class TelegramBotService {
             const { Customer, LastBillDate, MeterReading, MeterReplacement } = require('../models');
             const { Op } = require('sequelize');
 
-            // Find customer by Customer ID or Meter Number
-            const customer = await Customer.findOne({
-                where: {
-                    [Op.or]: [
-                        { CUSTOMER_NUM: searchValue },
-                        { METER_NO: searchValue }
-                    ]
-                }
-            });
+            // Process each customer
+            const results = [];
+            const notFound = [];
 
-            if (!customer) {
-                await this.bot.sendMessage(
-                    chatId,
-                    `❌ <b>Customer Not Found</b>\n\n` +
-                    `🔍 Search Value: ${searchValue}\n\n` +
+            for (const searchValue of searchValues) {
+                // Find customer by Customer ID or Meter Number
+                const customer = await Customer.findOne({
+                    where: {
+                        [Op.or]: [
+                            { CUSTOMER_NUM: searchValue },
+                            { METER_NO: searchValue }
+                        ]
+                    }
+                });
+
+                if (!customer) {
+                    notFound.push(searchValue);
+                    continue;
+                }
+
+                // Get last bill date
+                const lastBillRecord = await LastBillDate.findOne({
+                    where: { CUSTOMER_NUM: customer.CUSTOMER_NUM }
+                });
+
+                const lastBillDate = lastBillRecord ? lastBillRecord.LAST_BILL_DATE : null;
+                const now = new Date();
+                let billStatus = 'Unknown';
+                let monthsSinceBill = 0;
+
+                // Determine bill status
+                if (lastBillDate) {
+                    const lastBill = new Date(lastBillDate);
+                    const diffTime = Math.abs(now - lastBill);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    monthsSinceBill = Math.floor(diffDays / 30);
+
+                    if (monthsSinceBill === 0) {
+                        billStatus = '✅ Bill Generated This Month';
+                    } else if (monthsSinceBill === 1) {
+                        billStatus = '⚠️ Bill Generated Last Month';
+                    } else if (monthsSinceBill > 1) {
+                        billStatus = `🚫 Bill Stop (${monthsSinceBill} months)`;
+                    }
+                } else {
+                    billStatus = '❓ No Bill Record Found';
+                }
+
+                // Get meter readings count
+                const readingsCount = await MeterReading.count({
+                    where: { meter_no: customer.METER_NO }
+                });
+
+                // Get latest meter reading
+                const latestReading = await MeterReading.findOne({
+                    where: { meter_no: customer.METER_NO },
+                    order: [['reading_date', 'DESC']]
+                });
+
+                // Get meter replacement info
+                const meterReplacement = await MeterReplacement.findOne({
+                    where: {
+                        [Op.or]: [
+                            { oldMeterNumber: customer.METER_NO },
+                            { replaceMeterNumber: customer.METER_NO }
+                        ]
+                    },
+                    order: [['createdAt', 'DESC']]
+                });
+
+                // Format customer information
+                let message = `📋 <b>CUSTOMER INFORMATION</b>\n`;
+                message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+                message += `👤 <b>Customer Details:</b>\n`;
+                message += `   • Name: ${customer.CUSTOMER_NAME || 'N/A'}\n`;
+                message += `   • Customer ID: ${customer.CUSTOMER_NUM}\n`;
+                message += `   • Meter Number: ${customer.METER_NO}\n`;
+                message += `   • Mobile: ${customer.MOBILE_NO || 'N/A'}\n`;
+                message += `   • Address: ${customer.ADDRESS || 'N/A'}\n\n`;
+
+                message += `⚡ <b>Connection Details:</b>\n`;
+                message += `   • Tariff: ${customer.TARIFF || 'N/A'}\n`;
+                message += `   • Phase: ${customer.PHASE || 'N/A'}\n`;
+                message += `   • Sanction Load: ${customer.SANCTION_LOAD || 'N/A'}\n`;
+                message += `   • Connection Date: ${customer.CONN_DATE ? new Date(customer.CONN_DATE).toLocaleDateString() : 'N/A'}\n\n`;
+
+                message += `📍 <b>Location:</b>\n`;
+                message += `   • NOCS: ${customer.NOCS_NAME || 'N/A'}\n`;
+                message += `   • Feeder: ${customer.FEEDER_NAME || customer.FEEDER_NO || 'N/A'}\n\n`;
+
+                message += `💰 <b>Billing Status:</b>\n`;
+                message += `   • Status: ${billStatus}\n`;
+                message += `   • Last Bill Date: ${lastBillDate ? new Date(lastBillDate).toLocaleDateString() : 'No record'}\n`;
+                if (monthsSinceBill > 0) {
+                    message += `   • Months Since Bill: ${monthsSinceBill}\n`;
+                }
+                message += `\n`;
+
+                message += `📊 <b>Meter Readings:</b>\n`;
+                message += `   • Total Readings: ${readingsCount}\n`;
+                if (latestReading) {
+                    message += `   • Latest Reading Date: ${new Date(latestReading.reading_date).toLocaleDateString()}\n`;
+
+                    // Use value_kwh as primary, fall back to TOTAL_ENERGY
+                    const energyValue = latestReading.value_kwh || latestReading.TOTAL_ENERGY || 0;
+                    message += `   • Reading Value: ${energyValue.toFixed(2)} kWh\n`;
+
+                    // Show TOD breakdown if available
+                    if (latestReading.TOD1_ENERGY !== null && latestReading.TOD2_ENERGY !== null) {
+                        message += `   • TOD1 Energy: ${latestReading.TOD1_ENERGY.toFixed(2)} kWh\n`;
+                        message += `   • TOD2 Energy: ${latestReading.TOD2_ENERGY.toFixed(2)} kWh\n`;
+                    }
+
+                    // Show if estimated
+                    if (latestReading.is_estimated) {
+                        message += `   • ⚠️ Estimated Reading (${latestReading.estimation_method || 'Unknown method'})\n`;
+                    }
+                } else {
+                    message += `   • Latest Reading: No readings found\n`;
+                }
+
+                if (meterReplacement) {
+                    message += `\n⚙️ <b>Meter Replacement:</b>\n`;
+                    message += `   • Old Meter: ${meterReplacement.oldMeterNumber || 'N/A'}\n`;
+                    message += `   • New Meter: ${meterReplacement.replaceMeterNumber || 'N/A'}\n`;
+                    message += `   • Replace Date: ${new Date(meterReplacement.replaceDate).toLocaleDateString()}\n`;
+                    message += `   • Install Date: ${new Date(meterReplacement.installDate).toLocaleDateString()}\n`;
+                    message += `   • Old Meter Last Reading: ${meterReplacement.oldMeterLastReads.toFixed(2)} kWh\n`;
+                }
+
+                results.push(message);
+            }
+
+            // Send all found customer information
+            if (results.length > 0) {
+                // If multiple customers, send them with separators
+                if (results.length > 1) {
+                    for (let i = 0; i < results.length; i++) {
+                        const header = `🔢 <b>Result ${i + 1} of ${results.length}</b>\n\n`;
+                        await this.bot.sendMessage(chatId, header + results[i], { parse_mode: 'HTML' });
+
+                        // Add small delay between messages to avoid rate limiting
+                        if (i < results.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                } else {
+                    // Single customer, send normally
+                    await this.bot.sendMessage(chatId, results[0], { parse_mode: 'HTML' });
+                }
+
+                console.log(`✅ Customer info sent for ${results.length} customer(s)`);
+            }
+
+            // Send not found message if any
+            if (notFound.length > 0) {
+                const notFoundMessage = `❌ <b>Customer(s) Not Found</b>\n\n` +
+                    `🔍 <b>The following ${notFound.length} customer/meter number(s) were not found:</b>\n` +
+                    notFound.map((val, idx) => `   ${idx + 1}. ${val}`).join('\n') + `\n\n` +
                     `💡 Please check:\n` +
                     `   • Customer number is correct\n` +
                     `   • Meter number is correct\n` +
-                    `   • Customer exists in database`,
+                    `   • Customer exists in database`;
+
+                await this.bot.sendMessage(chatId, notFoundMessage, { parse_mode: 'HTML' });
+            }
+
+            // If nothing found at all
+            if (results.length === 0 && notFound.length === 0) {
+                await this.bot.sendMessage(
+                    chatId,
+                    `❌ <b>No Results</b>\n\n` +
+                    `No customers found for the provided search values.`,
                     { parse_mode: 'HTML' }
                 );
-                return;
             }
-
-            // Get last bill date
-            const lastBillRecord = await LastBillDate.findOne({
-                where: { CUSTOMER_NUM: customer.CUSTOMER_NUM }
-            });
-
-            const lastBillDate = lastBillRecord ? lastBillRecord.LAST_BILL_DATE : null;
-            const now = new Date();
-            let billStatus = 'Unknown';
-            let monthsSinceBill = 0;
-
-            // Determine bill status
-            if (lastBillDate) {
-                const lastBill = new Date(lastBillDate);
-                const diffTime = Math.abs(now - lastBill);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                monthsSinceBill = Math.floor(diffDays / 30);
-
-                if (monthsSinceBill === 0) {
-                    billStatus = '✅ Bill Generated This Month';
-                } else if (monthsSinceBill === 1) {
-                    billStatus = '⚠️ Bill Generated Last Month';
-                } else if (monthsSinceBill > 1) {
-                    billStatus = `🚫 Bill Stop (${monthsSinceBill} months)`;
-                }
-            } else {
-                billStatus = '❓ No Bill Record Found';
-            }
-
-            // Get meter readings count
-            const readingsCount = await MeterReading.count({
-                where: { meter_no: customer.METER_NO }
-            });
-
-            // Get latest meter reading
-            const latestReading = await MeterReading.findOne({
-                where: { meter_no: customer.METER_NO },
-                order: [['reading_date', 'DESC']]
-            });
-
-            // Get meter replacement info
-            const meterReplacement = await MeterReplacement.findOne({
-                where: {
-                    [Op.or]: [
-                        { oldMeterNumber: customer.METER_NO },
-                        { replaceMeterNumber: customer.METER_NO }
-                    ]
-                },
-                order: [['createdAt', 'DESC']]
-            });
-
-            // Format and send customer information
-            let message = `📋 <b>CUSTOMER INFORMATION</b>\n`;
-            message += `━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-            message += `👤 <b>Customer Details:</b>\n`;
-            message += `   • Name: ${customer.CUSTOMER_NAME || 'N/A'}\n`;
-            message += `   • Customer ID: ${customer.CUSTOMER_NUM}\n`;
-            message += `   • Meter Number: ${customer.METER_NO}\n`;
-            message += `   • Mobile: ${customer.MOBILE_NO || 'N/A'}\n`;
-            message += `   • Address: ${customer.ADDRESS || 'N/A'}\n\n`;
-
-            message += `⚡ <b>Connection Details:</b>\n`;
-            message += `   • Tariff: ${customer.TARIFF || 'N/A'}\n`;
-            message += `   • Phase: ${customer.PHASE || 'N/A'}\n`;
-            message += `   • Sanction Load: ${customer.SANCTION_LOAD || 'N/A'}\n`;
-            message += `   • Connection Date: ${customer.CONN_DATE ? new Date(customer.CONN_DATE).toLocaleDateString() : 'N/A'}\n\n`;
-
-            message += `📍 <b>Location:</b>\n`;
-            message += `   • NOCS: ${customer.NOCS_NAME || 'N/A'}\n`;
-            message += `   • Feeder: ${customer.FEEDER_NAME || customer.FEEDER_NO || 'N/A'}\n\n`;
-
-            message += `💰 <b>Billing Status:</b>\n`;
-            message += `   • Status: ${billStatus}\n`;
-            message += `   • Last Bill Date: ${lastBillDate ? new Date(lastBillDate).toLocaleDateString() : 'No record'}\n`;
-            if (monthsSinceBill > 0) {
-                message += `   • Months Since Bill: ${monthsSinceBill}\n`;
-            }
-            message += `\n`;
-
-            message += `📊 <b>Meter Readings:</b>\n`;
-            message += `   • Total Readings: ${readingsCount}\n`;
-            if (latestReading) {
-                message += `   • Latest Reading Date: ${new Date(latestReading.reading_date).toLocaleDateString()}\n`;
-
-                // Use value_kwh as primary, fall back to TOTAL_ENERGY
-                const energyValue = latestReading.value_kwh || latestReading.TOTAL_ENERGY || 0;
-                message += `   • Reading Value: ${energyValue.toFixed(2)} kWh\n`;
-
-                // Show TOD breakdown if available
-                if (latestReading.TOD1_ENERGY !== null && latestReading.TOD2_ENERGY !== null) {
-                    message += `   • TOD1 Energy: ${latestReading.TOD1_ENERGY.toFixed(2)} kWh\n`;
-                    message += `   • TOD2 Energy: ${latestReading.TOD2_ENERGY.toFixed(2)} kWh\n`;
-                }
-
-                // Show if estimated
-                if (latestReading.is_estimated) {
-                    message += `   • ⚠️ Estimated Reading (${latestReading.estimation_method || 'Unknown method'})\n`;
-                }
-            } else {
-                message += `   • Latest Reading: No readings found\n`;
-            }
-
-            if (meterReplacement) {
-                message += `\n⚙️ <b>Meter Replacement:</b>\n`;
-                message += `   • Old Meter: ${meterReplacement.oldMeterNumber || 'N/A'}\n`;
-                message += `   • New Meter: ${meterReplacement.replaceMeterNumber || 'N/A'}\n`;
-                message += `   • Replace Date: ${new Date(meterReplacement.replaceDate).toLocaleDateString()}\n`;
-                message += `   • Install Date: ${new Date(meterReplacement.installDate).toLocaleDateString()}\n`;
-                message += `   • Old Meter Last Reading: ${meterReplacement.oldMeterLastReads.toFixed(2)} kWh\n`;
-            }
-
-            await this.bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
-
-            console.log(`✅ Customer info sent for: ${customer.CUSTOMER_NUM}`);
 
         } catch (error) {
             console.error('❌ Error fetching customer info:', error);
