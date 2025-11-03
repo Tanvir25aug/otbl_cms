@@ -49,6 +49,41 @@
               </router-link>
             </li>
 
+            <li class="sidebar__item" v-if="auth.isAuthenticated && auth.user?.role === 'Manager'">
+              <router-link to="/manager" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path.startsWith('/manager') }" @click="closeSidebarOnMobile">
+                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                  <path d="M12 14v7"/>
+                  <path d="M9 18h6"/>
+                </svg>
+                👨‍💼 Manager
+              </router-link>
+            </li>
+
+            <li class="sidebar__item" v-if="auth.isAuthenticated && (auth.user?.role === 'Manager' || auth.user?.role === 'Admin' || auth.user?.role === 'Super Admin')">
+              <router-link to="/analytics" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path.startsWith('/analytics') }" @click="closeSidebarOnMobile">
+                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3v18h18"/>
+                  <path d="M18 17V9"/>
+                  <path d="M13 17V5"/>
+                  <path d="M8 17v-3"/>
+                </svg>
+                📊 Analytics Dashboard
+              </router-link>
+            </li>
+
+            <li class="sidebar__item" v-if="auth.isAuthenticated && auth.canManageUsers">
+              <router-link to="/data-fetching" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path.startsWith('/data-fetching') }" @click="closeSidebarOnMobile">
+                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7,10 12,15 17,10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                📥 Data-Fetching
+              </router-link>
+            </li>
+
             <li class="sidebar__item" v-if="auth.isAuthenticated">
               <router-link to="/content" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path.startsWith('/content') }" @click="closeSidebarOnMobile">
                 <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
