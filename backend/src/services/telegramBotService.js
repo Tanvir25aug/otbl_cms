@@ -262,7 +262,7 @@ class TelegramBotService {
             );
 
             // Import required models
-            const { Customer, LastBillDate, MeterReading, MeterReplacement } = require('../models');
+            const { Customer, MeterReplacement } = require('../models');
             const { Op } = require('sequelize');
 
             // Process each customer
@@ -284,45 +284,6 @@ class TelegramBotService {
                     notFound.push(searchValue);
                     continue;
                 }
-
-                // Get last bill date
-                const lastBillRecord = await LastBillDate.findOne({
-                    where: { CUSTOMER_NUM: customer.CUSTOMER_NUM }
-                });
-
-                const lastBillDate = lastBillRecord ? lastBillRecord.LAST_BILL_DATE : null;
-                const now = new Date();
-                let billStatus = 'Unknown';
-                let monthsSinceBill = 0;
-
-                // Determine bill status
-                if (lastBillDate) {
-                    const lastBill = new Date(lastBillDate);
-                    const diffTime = Math.abs(now - lastBill);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    monthsSinceBill = Math.floor(diffDays / 30);
-
-                    if (monthsSinceBill === 0) {
-                        billStatus = '✅ Bill Generated This Month';
-                    } else if (monthsSinceBill === 1) {
-                        billStatus = '⚠️ Bill Generated Last Month';
-                    } else if (monthsSinceBill > 1) {
-                        billStatus = `🚫 Bill Stop (${monthsSinceBill} months)`;
-                    }
-                } else {
-                    billStatus = '❓ No Bill Record Found';
-                }
-
-                // Get meter readings count
-                const readingsCount = await MeterReading.count({
-                    where: { meter_no: customer.METER_NO }
-                });
-
-                // Get latest meter reading
-                const latestReading = await MeterReading.findOne({
-                    where: { meter_no: customer.METER_NO },
-                    order: [['reading_date', 'DESC']]
-                });
 
                 // Get meter replacement info
                 const meterReplacement = await MeterReplacement.findOne({
@@ -354,38 +315,7 @@ class TelegramBotService {
 
                 message += `📍 <b>Location:</b>\n`;
                 message += `   • NOCS: ${customer.NOCS_NAME || 'N/A'}\n`;
-                message += `   • Feeder: ${customer.FEEDER_NAME || customer.FEEDER_NO || 'N/A'}\n\n`;
-
-                message += `💰 <b>Billing Status:</b>\n`;
-                message += `   • Status: ${billStatus}\n`;
-                message += `   • Last Bill Date: ${lastBillDate ? new Date(lastBillDate).toLocaleDateString() : 'No record'}\n`;
-                if (monthsSinceBill > 0) {
-                    message += `   • Months Since Bill: ${monthsSinceBill}\n`;
-                }
-                message += `\n`;
-
-                message += `📊 <b>Meter Readings:</b>\n`;
-                message += `   • Total Readings: ${readingsCount}\n`;
-                if (latestReading) {
-                    message += `   • Latest Reading Date: ${new Date(latestReading.reading_date).toLocaleDateString()}\n`;
-
-                    // Use value_kwh as primary, fall back to TOTAL_ENERGY
-                    const energyValue = latestReading.value_kwh || latestReading.TOTAL_ENERGY || 0;
-                    message += `   • Reading Value: ${energyValue.toFixed(2)} kWh\n`;
-
-                    // Show TOD breakdown if available
-                    if (latestReading.TOD1_ENERGY !== null && latestReading.TOD2_ENERGY !== null) {
-                        message += `   • TOD1 Energy: ${latestReading.TOD1_ENERGY.toFixed(2)} kWh\n`;
-                        message += `   • TOD2 Energy: ${latestReading.TOD2_ENERGY.toFixed(2)} kWh\n`;
-                    }
-
-                    // Show if estimated
-                    if (latestReading.is_estimated) {
-                        message += `   • ⚠️ Estimated Reading (${latestReading.estimation_method || 'Unknown method'})\n`;
-                    }
-                } else {
-                    message += `   • Latest Reading: No readings found\n`;
-                }
+                message += `   • Feeder: ${customer.FEEDER_NAME || customer.FEEDER_NO || 'N/A'}\n`;
 
                 if (meterReplacement) {
                     message += `\n⚙️ <b>Meter Replacement:</b>\n`;
@@ -399,24 +329,27 @@ class TelegramBotService {
                 results.push(message);
             }
 
-            // Send all found customer information
+            // Send all found customer information in one message
             if (results.length > 0) {
-                // If multiple customers, send them with separators
+                let combinedMessage = '';
+
                 if (results.length > 1) {
+                    // Multiple customers - combine with separators
                     for (let i = 0; i < results.length; i++) {
                         const header = `🔢 <b>Result ${i + 1} of ${results.length}</b>\n\n`;
-                        await this.bot.sendMessage(chatId, header + results[i], { parse_mode: 'HTML' });
+                        combinedMessage += header + results[i];
 
-                        // Add small delay between messages to avoid rate limiting
+                        // Add separator between customers (but not after the last one)
                         if (i < results.length - 1) {
-                            await new Promise(resolve => setTimeout(resolve, 500));
+                            combinedMessage += `\n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
                         }
                     }
                 } else {
-                    // Single customer, send normally
-                    await this.bot.sendMessage(chatId, results[0], { parse_mode: 'HTML' });
+                    // Single customer
+                    combinedMessage = results[0];
                 }
 
+                await this.bot.sendMessage(chatId, combinedMessage, { parse_mode: 'HTML' });
                 console.log(`✅ Customer info sent for ${results.length} customer(s)`);
             }
 
