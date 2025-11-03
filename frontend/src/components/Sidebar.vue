@@ -14,8 +14,14 @@
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/tickets">Tickets</router-link>
       </li>
+      <li v-if="auth.isAuthenticated && auth.user?.role === 'Manager'">
+        <router-link class="nav-link" to="/manager">👨‍💼 Manager</router-link>
+      </li>
       <li v-if="auth.isAuthenticated && (auth.user?.role === 'Manager' || auth.user?.role === 'Admin' || auth.user?.role === 'Super Admin')">
-        <router-link class="nav-link" to="/analytics">📊 Analytics</router-link>
+        <router-link class="nav-link" to="/analytics">📊 Analytics Dashboard</router-link>
+      </li>
+      <li v-if="auth.isAuthenticated && auth.canManageUsers">
+        <router-link class="nav-link" to="/data-fetching">📥 Data-Fetching</router-link>
       </li>
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/content">Content</router-link>
@@ -55,9 +61,6 @@
       </li>
       <li v-if="auth.isAuthenticated && (auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin')">
         <router-link class="nav-link" to="/telegram-notifications">Telegram Notifications</router-link>
-      </li>
-      <li v-if="auth.isAuthenticated && auth.user?.role === 'Manager'">
-        <router-link class="nav-link" to="/manager">Manager Dashboard</router-link>
       </li>
     </ul>
     <hr>
