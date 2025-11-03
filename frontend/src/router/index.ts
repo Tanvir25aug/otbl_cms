@@ -60,7 +60,11 @@ const router = createRouter({
         { path: 'c2m-upload', name: 'c2m-upload', component: () => import('../views/C2MUploadView.vue'), meta: { roles: ['Super Admin', 'Admin', 'Manager'] } },
         { path: 'customer-support-center', name: 'customer-support-center', component: () => import('../views/CustomerSupportCenterView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin', 'Manager', 'Agent'] } },
         { path: 'complaints', name: 'complaints', component: () => import('../views/ComplaintsView.vue'), meta: { requiresAuth: true } },
-        { path: 'telegram-notifications', name: 'telegram-notifications', component: () => import('../views/TelegramNotificationsView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin'] } }
+        { path: 'telegram-notifications', name: 'telegram-notifications', component: () => import('../views/TelegramNotificationsView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin'] } },
+        // Analytics routes
+        { path: 'analytics', name: 'analytics-dashboard', component: () => import('../views/analytics/OrganizationDashboard.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin'] } },
+        { path: 'analytics/project/:id', name: 'project-analytics', component: () => import('../views/analytics/ProjectAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin'] } },
+        { path: 'analytics/sprint/:id', name: 'sprint-analytics', component: () => import('../views/analytics/SprintAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin', 'Agent'] } }
       ]
     },
     // Legacy auth routes (redirect to new routes)

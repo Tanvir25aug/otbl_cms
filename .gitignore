@@ -17,6 +17,11 @@ frontend/.env
 *.sqlite3
 database.sqlite
 
+# Windows device files
+nul
+backend/nul
+frontend/nul
+
 # Logs
 logs/
 *.log

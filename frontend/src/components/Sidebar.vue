@@ -14,6 +14,9 @@
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/tickets">Tickets</router-link>
       </li>
+      <li v-if="auth.isAuthenticated && (auth.user?.role === 'Manager' || auth.user?.role === 'Admin' || auth.user?.role === 'Super Admin')">
+        <router-link class="nav-link" to="/analytics">📊 Analytics</router-link>
+      </li>
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/content">Content</router-link>
       </li>

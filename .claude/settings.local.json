@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(xcopy:*)",
+      "Bash(npm run dev:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx sequelize-cli:*)",
+      "Bash(if exist \"node_modules\\.vite\" rmdir /s /q \"node_modules\\.vite\")",
+      "Bash(npm run build:*)",
+      "Bash(git restore:*)",
+      "Bash(node -e:*)",
+      "Bash(dir:*)",
+      "Bash(move 20251031000000-enhance-notifications.js 20251228000000-enhance-notifications.js)",
+      "Bash(move \"D:\\Back up AI_CMS\\V3\\cms-main\\backend\\migrations\\20250101000000-add-missing-columns-to-teams.js\" \"D:\\Back up AI_CMS\\V3\\cms-main\\backend\\migrations\\20251231120000-add-missing-columns-to-teams.js\")",
+      "Bash(git add:*)",
+      "Bash(if exist \"backend\\nul\" del \"backend\\nul\")",
+      "Bash(if exist \"frontend\\nul\" del \"frontend\\nul\")",
+      "Bash(if exist \"nul\" del \"nul\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

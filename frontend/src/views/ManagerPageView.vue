@@ -9,7 +9,7 @@
           </svg>
           Manager Dashboard
         </h1>
-        <p class="page-subtitle">Manage projects, teams, tickets, and complaints</p>
+        <p class="page-subtitle">Manage projects, tickets, and complaints</p>
       </div>
     </div>
 
@@ -24,21 +24,6 @@
         <div class="stat-content">
           <h3>{{ stats.totalProjects }}</h3>
           <p>Active Projects</p>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-        </div>
-        <div class="stat-content">
-          <h3>{{ stats.totalTeams }}</h3>
-          <p>Total Teams</p>
         </div>
       </div>
 
@@ -78,15 +63,6 @@
             <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
           </svg>
           Projects
-        </button>
-        <button class="tab" :class="{ active: activeTab === 'teams' }" @click="activeTab = 'teams'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          Teams
         </button>
         <button class="tab" :class="{ active: activeTab === 'tickets' }" @click="activeTab = 'tickets'">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -132,14 +108,13 @@
                 <th>Project Name</th>
                 <th>Description</th>
                 <th>Status</th>
-                <th>Teams</th>
                 <th>Created By</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="loadingProjects" class="loading-row">
-                <td colspan="6" class="text-center">
+                <td colspan="5" class="text-center">
                   <div class="loading-spinner">
                     <div class="spinner-ring"></div>
                   </div>
@@ -147,7 +122,7 @@
                 </td>
               </tr>
               <tr v-else-if="projects.length === 0" class="no-data-row">
-                <td colspan="6" class="text-center">
+                <td colspan="5" class="text-center">
                   <p>No projects found. Create your first project!</p>
                 </td>
               </tr>
@@ -159,7 +134,6 @@
                     {{ project.status }}
                   </span>
                 </td>
-                <td>{{ project.teams?.length || 0 }} teams</td>
                 <td>{{ project.creator?.fullName || 'Unknown' }}</td>
                 <td>
                   <div class="action-buttons">
@@ -170,97 +144,6 @@
                       </svg>
                     </button>
                     <button class="btn btn-sm btn-danger" @click="deleteProject(project)" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Teams Tab -->
-      <div v-if="activeTab === 'teams'" class="table-section">
-        <div class="table-header">
-          <div>
-            <h3>Teams</h3>
-            <p class="results-count">{{ teams.length }} teams</p>
-          </div>
-          <div class="table-actions">
-            <select class="form-control" v-model="selectedProjectFilter" @change="filterTeams" style="margin-right: 10px;">
-              <option value="">All Projects</option>
-              <option v-for="project in projects" :key="project.id" :value="project.id">
-                {{ project.name }}
-              </option>
-            </select>
-            <button class="btn btn-primary" @click="openCreateTeamModal">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Create Team
-            </button>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Team Name</th>
-                <th>Project</th>
-                <th>Team Leader</th>
-                <th>Members</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="loadingTeams" class="loading-row">
-                <td colspan="6" class="text-center">
-                  <div class="loading-spinner">
-                    <div class="spinner-ring"></div>
-                  </div>
-                  <p>Loading teams...</p>
-                </td>
-              </tr>
-              <tr v-else-if="filteredTeams.length === 0" class="no-data-row">
-                <td colspan="6" class="text-center">
-                  <p>No teams found. Create your first team!</p>
-                </td>
-              </tr>
-              <tr v-else v-for="team in filteredTeams" :key="team.id" class="data-row">
-                <td><strong>{{ team.name }}</strong></td>
-                <td>{{ team.project?.name || 'N/A' }}</td>
-                <td>{{ team.leader?.fullName || 'No leader assigned' }}</td>
-                <td>{{ team.members?.length || 0 }} members</td>
-                <td>
-                  <span class="status-badge" :class="getTeamStatusClass(team.status)">
-                    {{ team.status }}
-                  </span>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <button class="btn btn-sm btn-secondary" @click="viewTeamMembers(team)" title="View Members">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                      </svg>
-                    </button>
-                    <button class="btn btn-sm btn-primary" @click="openAddMemberModal(team)" title="Add Member">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
-                      </svg>
-                    </button>
-                    <button class="btn btn-sm btn-danger" @click="deleteTeam(team)" title="Delete">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -441,199 +324,6 @@
     </div>
   </Teleport>
 
-  <!-- Create Team Modal -->
-  <Teleport to="body">
-    <div
-      v-if="showCreateTeamModal"
-      class="modal-overlay create-team-modal-overlay"
-      @click.self="closeCreateTeamModal"
-      :style="{
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        width: '100%',
-        height: '100%',
-        zIndex: '10001',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.6)'
-      }"
-    >
-      <div class="modal" @click.stop :style="{ display: 'flex', flexDirection: 'column', visibility: 'visible', opacity: '1' }">
-        <div class="modal-header">
-          <h3>Create New Team</h3>
-          <button class="btn btn-ghost" @click="closeCreateTeamModal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Team Name *</label>
-            <input type="text" class="form-control" v-model="newTeam.name" placeholder="Enter team name" required>
-          </div>
-          <div class="form-group">
-            <label>Project *</label>
-            <select class="form-control" v-model="newTeam.projectId" required>
-              <option value="">Select Project</option>
-              <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Team Leader</label>
-            <select class="form-control" v-model="newTeam.leaderId">
-              <option value="">Select Team Leader</option>
-              <option v-for="user in availableUsers" :key="user.id" :value="user.id">{{ user.fullName }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea class="form-control" v-model="newTeam.description" placeholder="Enter team description" rows="3"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeCreateTeamModal">Cancel</button>
-          <button class="btn btn-primary" @click="createTeam" :disabled="!newTeam.name || !newTeam.projectId">Create Team</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <!-- Add Member Modal -->
-  <Teleport to="body">
-    <div
-      v-if="showAddMemberModal"
-      class="modal-overlay add-member-modal-overlay"
-      @click.self="closeAddMemberModal"
-      :style="{
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        width: '100%',
-        height: '100%',
-        zIndex: '10002',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.6)'
-      }"
-    >
-      <div class="modal" @click.stop :style="{ display: 'flex', flexDirection: 'column', visibility: 'visible', opacity: '1' }">
-        <div class="modal-header">
-          <h3>Add Team Member to {{ selectedTeam?.name }}</h3>
-          <button class="btn btn-ghost" @click="closeAddMemberModal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Select User *</label>
-            <select class="form-control" v-model="newMember.userId" required>
-              <option value="">Choose a user</option>
-              <option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                {{ user.fullName }} ({{ user.role }})
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Role in Team</label>
-            <input type="text" class="form-control" v-model="newMember.role" placeholder="e.g., Developer, Tester, Designer">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeAddMemberModal">Cancel</button>
-          <button class="btn btn-primary" @click="addMemberToTeam" :disabled="!newMember.userId">Add Member</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
-  <!-- View Team Members Modal -->
-  <Teleport to="body">
-    <div
-      v-if="showViewMembersModal"
-      class="modal-overlay view-members-modal-overlay"
-      @click.self="closeViewMembersModal"
-      :style="{
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        width: '100%',
-        height: '100%',
-        zIndex: '10003',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.6)'
-      }"
-    >
-      <div class="modal modal-large" @click.stop :style="{ display: 'flex', flexDirection: 'column', visibility: 'visible', opacity: '1' }">
-        <div class="modal-header">
-          <h3>{{ selectedTeam?.name }} - Team Members</h3>
-          <button class="btn btn-ghost" @click="closeViewMembersModal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>User Role</th>
-                <th>Team Role</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="teamMembersLoading" class="loading-row">
-                <td colspan="5" class="text-center"><p>Loading...</p></td>
-              </tr>
-              <tr v-else-if="!teamMembersData || teamMembersData.length === 0" class="no-data-row">
-                <td colspan="5" class="text-center"><p>No members in this team</p></td>
-              </tr>
-              <tr v-else v-for="member in teamMembersData" :key="member.id" class="data-row">
-                <td>
-                  <div class="user-info">
-                    <div class="user-details">
-                      <h4>{{ member.fullName }}</h4>
-                      <p>{{ member.email }}</p>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="role-badge" :class="getRoleClass(member.role)">{{ member.role }}</span></td>
-                <td>{{ member.TeamMember?.role || 'Member' }}</td>
-                <td>{{ formatDate(member.TeamMember?.joinedAt) }}</td>
-                <td>
-                  <button class="btn btn-sm btn-danger" @click="removeMember(member)" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeViewMembersModal">Close</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
-
   <!-- Assign Ticket Modal (existing) -->
   <Teleport to="body">
     <div
@@ -748,34 +438,25 @@ const activeTab = ref('projects');
 
 // Loading states
 const loadingProjects = ref(true);
-const loadingTeams = ref(true);
 const loadingTickets = ref(true);
 const loadingComplaints = ref(true);
-const teamMembersLoading = ref(false);
 
 // Data
 const projects = ref<any[]>([]);
-const teams = ref<any[]>([]);
 const tickets = ref<any[]>([]);
 const complaints = ref<any[]>([]);
 const availableUsers = ref<any[]>([]);
-const teamMembersData = ref<any[]>([]);
 
 // Filters
-const selectedProjectFilter = ref('');
 const ticketStatusFilter = ref('');
 const complaintStatusFilter = ref('');
 
 // Modals
 const showCreateProjectModal = ref(false);
-const showCreateTeamModal = ref(false);
-const showAddMemberModal = ref(false);
-const showViewMembersModal = ref(false);
 const showAssignTicketModal = ref(false);
 const showAssignComplaintModal = ref(false);
 
 // Selected items
-const selectedTeam = ref<any>(null);
 const selectedTicket = ref<any>(null);
 const selectedComplaint = ref<any>(null);
 
@@ -786,33 +467,14 @@ const newProject = ref({
   status: 'Active'
 });
 
-const newTeam = ref({
-  name: '',
-  description: '',
-  projectId: '',
-  leaderId: ''
-});
-
-const newMember = ref({
-  userId: '',
-  role: ''
-});
-
 const assignTicketTo = ref('');
 const assignComplaintTo = ref('');
 
 // Stats
 const stats = ref({
   totalProjects: 0,
-  totalTeams: 0,
   activeTickets: 0,
   pendingComplaints: 0
-});
-
-// Computed
-const filteredTeams = computed(() => {
-  if (!selectedProjectFilter.value) return teams.value;
-  return teams.value.filter(t => t.projectId === parseInt(selectedProjectFilter.value));
 });
 
 const filteredTickets = computed(() => {
@@ -837,20 +499,6 @@ const fetchProjects = async () => {
     projects.value = [];
   } finally {
     loadingProjects.value = false;
-  }
-};
-
-const fetchTeams = async () => {
-  loadingTeams.value = true;
-  try {
-    const response = await api.get('/teams');
-    teams.value = Array.isArray(response.data) ? response.data : (response.data.rows || []);
-    stats.value.totalTeams = teams.value.length;
-  } catch (error) {
-    console.error('Error fetching teams:', error);
-    teams.value = [];
-  } finally {
-    loadingTeams.value = false;
   }
 };
 
@@ -914,7 +562,7 @@ const createProject = async () => {
 };
 
 const viewProject = (project: any) => {
-  alert(`Viewing project: ${project.name}\n\nDescription: ${project.description}\nStatus: ${project.status}\nTeams: ${project.teams?.length || 0}`);
+  alert(`Viewing project: ${project.name}\n\nDescription: ${project.description}\nStatus: ${project.status}`);
 };
 
 const deleteProject = async (project: any) => {
@@ -923,103 +571,9 @@ const deleteProject = async (project: any) => {
   try {
     await api.delete(`/projects/${project.id}`);
     await fetchProjects();
-    await fetchTeams(); // Refresh teams as they might be affected
   } catch (error: any) {
     console.error('Error deleting project:', error);
     alert(error.response?.data?.message || 'Failed to delete project');
-  }
-};
-
-// Modal functions - Teams
-const openCreateTeamModal = () => {
-  newTeam.value = { name: '', description: '', projectId: '', leaderId: '' };
-  showCreateTeamModal.value = true;
-};
-
-const closeCreateTeamModal = () => {
-  showCreateTeamModal.value = false;
-};
-
-const createTeam = async () => {
-  try {
-    await api.post('/teams', newTeam.value);
-    await fetchTeams();
-    closeCreateTeamModal();
-  } catch (error: any) {
-    console.error('Error creating team:', error);
-    alert(error.response?.data?.message || 'Failed to create team');
-  }
-};
-
-const deleteTeam = async (team: any) => {
-  if (!confirm(`Are you sure you want to delete team "${team.name}"?`)) return;
-
-  try {
-    await api.delete(`/teams/${team.id}`);
-    await fetchTeams();
-  } catch (error: any) {
-    console.error('Error deleting team:', error);
-    alert(error.response?.data?.message || 'Failed to delete team');
-  }
-};
-
-// Modal functions - Team Members
-const viewTeamMembers = async (team: any) => {
-  selectedTeam.value = team;
-  showViewMembersModal.value = true;
-  teamMembersLoading.value = true;
-
-  try {
-    const response = await api.get(`/teams/${team.id}/members`);
-    teamMembersData.value = Array.isArray(response.data) ? response.data : [];
-  } catch (error) {
-    console.error('Error fetching team members:', error);
-    teamMembersData.value = [];
-  } finally {
-    teamMembersLoading.value = false;
-  }
-};
-
-const closeViewMembersModal = () => {
-  showViewMembersModal.value = false;
-  selectedTeam.value = null;
-  teamMembersData.value = [];
-};
-
-const openAddMemberModal = (team: any) => {
-  selectedTeam.value = team;
-  newMember.value = { userId: '', role: '' };
-  showAddMemberModal.value = true;
-};
-
-const closeAddMemberModal = () => {
-  showAddMemberModal.value = false;
-  selectedTeam.value = null;
-};
-
-const addMemberToTeam = async () => {
-  if (!selectedTeam.value || !newMember.value.userId) return;
-
-  try {
-    await api.post(`/teams/${selectedTeam.value.id}/members`, newMember.value);
-    await fetchTeams();
-    closeAddMemberModal();
-  } catch (error: any) {
-    console.error('Error adding member:', error);
-    alert(error.response?.data?.message || 'Failed to add member to team');
-  }
-};
-
-const removeMember = async (member: any) => {
-  if (!selectedTeam.value) return;
-  if (!confirm(`Remove ${member.fullName} from this team?`)) return;
-
-  try {
-    await api.delete(`/teams/${selectedTeam.value.id}/members/${member.id}`);
-    await viewTeamMembers(selectedTeam.value); // Refresh the list
-  } catch (error: any) {
-    console.error('Error removing member:', error);
-    alert(error.response?.data?.message || 'Failed to remove member');
   }
 };
 
@@ -1076,10 +630,6 @@ const assignComplaint = async () => {
 };
 
 // Filter functions
-const filterTeams = () => {
-  // Computed property handles this
-};
-
 const filterTickets = () => {
   // Computed property handles this
 };
@@ -1097,10 +647,6 @@ const getProjectStatusClass = (status: string) => {
     'Cancelled': 'status-closed'
   };
   return map[status] || '';
-};
-
-const getTeamStatusClass = (status: string) => {
-  return status === 'Active' ? 'status-active' : 'status-inactive';
 };
 
 const getStatusClass = (status: string) => {
@@ -1144,7 +690,6 @@ const formatDate = (date: string) => {
 // Initialize
 onMounted(() => {
   fetchProjects();
-  fetchTeams();
   fetchTickets();
   fetchComplaints();
   fetchAvailableUsers();

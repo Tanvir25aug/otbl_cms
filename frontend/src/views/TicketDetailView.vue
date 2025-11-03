@@ -21,17 +21,29 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              Assigned to ID: {{ ticket.assigneeId }}
+              Assigned to: {{ ticket.assignee?.fullName || ticket.assignee?.email || 'Unassigned' }}
             </div>
           </div>
         </div>
-        <router-link to="/tickets" class="btn btn--outline-white">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Back to Tickets
-        </router-link>
+
+        <!-- Header Actions with Export Options -->
+        <div class="header-actions">
+          <ExportOptions :ticketId="ticket.id" />
+          <router-link to="/tickets" class="btn btn--outline-white">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tickets
+          </router-link>
+        </div>
       </div>
+
+      <!-- Status Workflow Component -->
+      <StatusWorkflow
+        :ticket="ticket"
+        :canChangeStatus="canChangeStatus"
+        @statusChanged="handleStatusChange"
+      />
 
       <!-- Info Cards -->
       <div class="info-cards">
@@ -90,6 +102,12 @@
           </div>
         </div>
       </div>
+
+      <!-- Quick Actions Component -->
+      <QuickActions
+        :ticket="ticket"
+        @actionComplete="handleQuickAction"
+      />
 
       <!-- Description Card -->
       <div class="content-card description-card">
@@ -160,8 +178,12 @@
         </div>
       </div>
 
-      <!-- Comments Section -->
-      <div class="content-card comments-card">
+      <!-- Two Column Layout: Main Content & Sidebar -->
+      <div class="ticket-content-grid">
+        <!-- Left Column: Main Content -->
+        <div class="ticket-main-content">
+          <!-- Comments Section -->
+          <div class="content-card comments-card">
         <div class="content-card__header">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -310,6 +332,30 @@
             <span>Ticket is closed. No new comments can be added.</span>
           </div>
         </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Sidebar -->
+        <div class="ticket-sidebar">
+          <!-- Project & Assignment Panel -->
+          <TeamProjectPanel
+            :ticket="ticket"
+            :canReassign="canReassign"
+            @reassigned="handleReassigned"
+          />
+
+          <!-- Time Tracking -->
+          <TimeTracking
+            :ticketId="ticket.id"
+            @timeLogged="handleTimeLogged"
+          />
+
+          <!-- Activity Timeline -->
+          <ActivityTimeline
+            ref="activityTimelineRef"
+            :ticketId="ticket.id"
+          />
+        </div>
       </div>
     </div>
 
@@ -322,10 +368,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import apiClient from '../api';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+
+// Import new ticket components
+import ActivityTimeline from '../components/ticket/ActivityTimeline.vue';
+import StatusWorkflow from '../components/ticket/StatusWorkflow.vue';
+import QuickActions from '../components/ticket/QuickActions.vue';
+import TimeTracking from '../components/ticket/TimeTracking.vue';
+import TeamProjectPanel from '../components/ticket/TeamProjectPanel.vue';
+import ExportOptions from '../components/ticket/ExportOptions.vue';
 
 const ticket = ref<any>(null);
 const comments = ref<any[]>([]);
@@ -335,15 +389,21 @@ const isSubmitting = ref(false);
 const commentFiles = ref<File[]>([]);
 const commentFileInput = ref<HTMLInputElement | null>(null);
 const route = useRoute();
+const router = useRouter();
 let pollingInterval: any;
+
+// Refs for new components
+const activityTimelineRef = ref<InstanceType<typeof ActivityTimeline> | null>(null);
+const canChangeStatus = computed(() => true); // Adjust based on user permissions
+const canReassign = computed(() => true); // Adjust based on user permissions
 
 // CKEditor configuration
 const editor = ClassicEditor as any;
 const editorConfig = {
   toolbar: [
     'heading', '|',
-    'bold', 'italic', 'underline', 'strikethrough', '|',
-    'link', 'imageUpload', 'blockQuote', '|',
+    'bold', 'italic', '|',
+    'link', 'blockQuote', '|',
     'bulletedList', 'numberedList', '|',
     'insertTable', '|',
     'undo', 'redo'
@@ -374,7 +434,51 @@ const fetchTicketDetails = async () => {
   }
 };
 
+// Event handlers for new components
+const handleStatusChange = (newStatus: string) => {
+  // Refresh ticket data
+  fetchTicketDetails();
+  // Refresh activity timeline
+  activityTimelineRef.value?.refresh();
+};
+
+const handleQuickAction = () => {
+  // Refresh ticket data
+  fetchTicketDetails();
+  // Refresh activity timeline
+  activityTimelineRef.value?.refresh();
+};
+
+const handleTimeLogged = () => {
+  // Refresh activity timeline
+  activityTimelineRef.value?.refresh();
+};
+
+const handleReassigned = (newAssigneeId: number | null) => {
+  // Refresh ticket data
+  fetchTicketDetails();
+  // Refresh activity timeline
+  activityTimelineRef.value?.refresh();
+};
+
 onMounted(() => {
+  // Validate that the ticket ID is a number
+  const ticketId = route.params.id;
+
+  if (!ticketId || isNaN(Number(ticketId))) {
+    console.error('Invalid ticket ID:', ticketId);
+
+    // If user tried to go to /tickets/analytics, redirect to /analytics
+    if (ticketId === 'analytics') {
+      router.push('/analytics');
+      return;
+    }
+
+    // Otherwise redirect to tickets list
+    router.push('/tickets');
+    return;
+  }
+
   fetchTicketDetails();
   pollingInterval = setInterval(fetchTicketDetails, 5000);
 });
@@ -1234,7 +1338,48 @@ const addComment = async () => {
   font-weight: var(--font-weight-semibold);
 }
 
+/* Two-column grid layout */
+.ticket-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+}
+
+.ticket-main-content {
+  min-width: 0; /* Prevents grid overflow */
+}
+
+.ticket-sidebar {
+  position: sticky;
+  top: var(--spacing-xl);
+  align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .ticket-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
 @media (max-width: 768px) {
   .ticket-detail-view {
     padding: var(--spacing-md);

@@ -2,6 +2,7 @@ const Comment = require('../models/Comment');
 const CommentAttachment = require('../models/CommentAttachment');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
+const { notifyCommentAdded } = require('../services/notificationService');
 
 const addComment = async (req, res) => {
   try {
@@ -12,7 +13,9 @@ const addComment = async (req, res) => {
       return res.status(400).send('Comment content is required.');
     }
 
-    const ticket = await Ticket.findByPk(id);
+    const ticket = await Ticket.findByPk(id, {
+      include: [{ model: User, as: 'assignee', attributes: ['id', 'email', 'fullName'] }]
+    });
     if (!ticket) {
       return res.status(404).send('Ticket not found.');
     }
@@ -35,6 +38,15 @@ const addComment = async (req, res) => {
         userId: req.user.id,
       }));
       await CommentAttachment.bulkCreate(attachments);
+    }
+
+    // Send notification to ticket assignee
+    try {
+      if (ticket.assignee && req.user) {
+        await notifyCommentAdded(ticket, comment, req.user, ticket.assignee);
+      }
+    } catch (notifError) {
+      console.error('Error sending notification:', notifError);
     }
 
     // Fetch the comment with user info to return

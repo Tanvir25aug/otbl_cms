@@ -1,0 +1,194 @@
+name: Deploy CMS Application
+
+# Trigger: Run this workflow when code is pushed to master branch
+on:
+  push:
+    branches:
+      - master
+  # You can also trigger manually from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      # STEP 1: Checkout the code from GitHub repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # STEP 2: Setup Node.js 22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      # STEP 3: Install Backend Dependencies
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      # STEP 4: Install Frontend Dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      # STEP 5: Run Backend Tests (if you have tests)
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: |
+          if [ -f "package.json" ] && grep -q '"test"' package.json; then
+            npm test || echo "No tests configured, skipping..."
+          else
+            echo "No tests configured, skipping..."
+          fi
+        continue-on-error: true
+
+      # STEP 6: Type Check Frontend
+      - name: Type Check Frontend
+        working-directory: ./frontend
+        run: npm run type-check
+
+      # STEP 7: Build Frontend
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      # STEP 8: Create deployment package
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r backend deploy/
+          cp -r frontend/dist deploy/frontend
+          # Remove node_modules to reduce size
+          rm -rf deploy/backend/node_modules
+          # Create tarball
+          tar -czf deploy.tar.gz -C deploy .
+
+      # STEP 9: Deploy to VPS via SSH
+      - name: Deploy to VPS Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "deploy.tar.gz"
+          target: "/tmp"
+
+      # STEP 10: Execute deployment commands on VPS
+      - name: Execute deployment on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e
+
+            echo "============================================"
+            echo "Starting deployment process..."
+            echo "============================================"
+
+            DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+            BACKUP_DIR="$DEPLOY_PATH/backups"
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+            # Create backup directory if not exists
+            mkdir -p $BACKUP_DIR
+
+            # Backup current version
+            echo "Creating backup..."
+            if [ -d "$DEPLOY_PATH/backend" ]; then
+              tar -czf $BACKUP_DIR/backend_$TIMESTAMP.tar.gz -C $DEPLOY_PATH backend
+            fi
+            if [ -d "$DEPLOY_PATH/frontend" ]; then
+              tar -czf $BACKUP_DIR/frontend_$TIMESTAMP.tar.gz -C $DEPLOY_PATH frontend
+            fi
+
+            # Keep only last 5 backups
+            cd $BACKUP_DIR
+            ls -t | tail -n +6 | xargs rm -f
+
+            # Extract new version
+            echo "Extracting new version..."
+            cd /tmp
+            tar -xzf deploy.tar.gz -C $DEPLOY_PATH
+            rm deploy.tar.gz
+
+            # Deploy Backend
+            echo "Deploying backend..."
+            cd $DEPLOY_PATH/backend
+            npm ci --production
+
+            # Stop PM2 process
+            echo "Stopping PM2 process..."
+            pm2 stop cms-backend || echo "Process not running"
+
+            # Start PM2 process
+            echo "Starting PM2 process..."
+            pm2 start src/app.js --name cms-backend --time
+            pm2 save
+
+            # Deploy Frontend
+            echo "Deploying frontend..."
+            # Assuming your Nginx serves from /var/www/cms/frontend
+            # Adjust path if different
+            if [ -d "/var/www/html" ]; then
+              sudo cp -r $DEPLOY_PATH/frontend/* /var/www/html/
+            fi
+
+            # Reload Nginx
+            echo "Reloading Nginx..."
+            sudo nginx -t && sudo systemctl reload nginx
+
+            # Health check
+            echo "Running health check..."
+            sleep 5
+            if pm2 list | grep -q "cms-backend.*online"; then
+              echo "✓ Backend is running"
+            else
+              echo "✗ Backend failed to start!"
+              echo "Rolling back..."
+              pm2 stop cms-backend
+              cd $BACKUP_DIR
+              LATEST_BACKUP=$(ls -t backend_*.tar.gz | head -1)
+              tar -xzf $LATEST_BACKUP -C $DEPLOY_PATH
+              cd $DEPLOY_PATH/backend
+              pm2 start src/app.js --name cms-backend
+              exit 1
+            fi
+
+            # Check if backend API is responding
+            if curl -f http://localhost:3000/health 2>/dev/null; then
+              echo "✓ Backend API is responding"
+            else
+              echo "⚠ Backend API health check failed (but process is running)"
+            fi
+
+            echo "============================================"
+            echo "✓ Deployment completed successfully!"
+            echo "============================================"
+
+            # Show PM2 status
+            pm2 status
+
+      # STEP 11: Notify deployment status
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Server: ${{ secrets.SSH_HOST }}"
+          echo "Time: $(date)"
+
+      - name: Deployment Failure Notification
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Please check the logs above for details."

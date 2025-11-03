@@ -236,6 +236,25 @@
             </div>
           </div>
 
+          <!-- Project Assignment -->
+          <div class="form-section-header">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18"/>
+                <path d="M5 21V7l8-4v18"/>
+                <path d="M19 21V11l-6-4"/>
+              </svg>
+              Project Assignment
+            </h3>
+            <p>Assign the user to one or more projects</p>
+          </div>
+
+          <div class="form-grid full-width">
+            <ProjectAssignment
+              v-model="user.projects"
+            />
+          </div>
+
           <!-- Security Information -->
           <div class="form-section-header">
             <h3>
@@ -383,6 +402,7 @@ import { ref, computed, onMounted } from 'vue';
 import apiClient from '../api';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import ProjectAssignment from '../components/ProjectAssignment.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -398,7 +418,8 @@ const user = ref({
   profilePicture: '',
   managerId: '',
   status: 'active' as 'active' | 'inactive',
-  permissions: [] as string[]
+  permissions: [] as string[],
+  projects: [] as number[]
 });
 
 const confirmPassword = ref('');
@@ -604,7 +625,8 @@ const resetForm = () => {
     profilePicture: '',
     managerId: '',
     status: 'active',
-    permissions: []
+    permissions: [],
+    projects: []
   };
   confirmPassword.value = '';
   errors.value = {};
@@ -749,6 +771,10 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+}
+
+.form-grid.full-width {
+  grid-template-columns: 1fr;
 }
 
 .form-group {

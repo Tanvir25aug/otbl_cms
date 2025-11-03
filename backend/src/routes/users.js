@@ -7,7 +7,9 @@ const {
   getUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getUserProjects,
+  updateUserProjects
 } = require('../controllers/userController');
 const { protect, hasRole } = require('../middleware/authMiddleware');
 
@@ -30,5 +32,10 @@ router.route('/')
 router.route('/:id')
   .put(hasRole('Super Admin', 'Admin'), updateUser)
   .delete(hasRole('Super Admin'), deleteUser);
+
+// Project assignment routes for users
+router.route('/:id/projects')
+  .get(hasRole('Super Admin', 'Admin'), getUserProjects)
+  .put(hasRole('Super Admin', 'Admin'), updateUserProjects);
 
 module.exports = router;

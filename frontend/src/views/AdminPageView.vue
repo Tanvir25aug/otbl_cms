@@ -204,6 +204,13 @@
                   </button>
                   <button
                     v-if="canEdit(user)"
+                    @click.stop="openProjectsModal(user)"
+                    class="btn btn-sm btn-primary"
+                  >
+                    Projects
+                  </button>
+                  <button
+                    v-if="canEdit(user)"
                     @click.stop="handleDeleteUser(user.id)"
                     class="btn btn-sm btn-danger"
                   >
@@ -381,6 +388,74 @@
       </div>
     </div>
   </Teleport>
+
+  <!-- Project Assignment Modal -->
+  <Teleport to="body">
+    <div
+      v-if="showProjectsModal"
+      class="modal-overlay projects-modal-overlay"
+      @click.self="closeProjectsModal"
+      :style="{
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100vw',
+        height: '100vh',
+        zIndex: '10003',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.5)'
+      }"
+    >
+      <div class="modal projects-modal" @click.stop :style="{
+        background: '#ffffff',
+        color: '#000000',
+        position: 'relative',
+        zIndex: '10004',
+        maxWidth: '700px',
+        width: '90%',
+        maxHeight: '90vh',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '1rem',
+        overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+      }">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 2rem; border-bottom: 1px solid #e5e7eb;">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.25rem 0;">
+              Manage Project Assignment
+            </h3>
+            <p v-if="projectsUser" class="modal-subtitle" style="font-size: 0.875rem; color: var(--color-text-secondary); margin: 0;">
+              Assign projects for {{ projectsUser.fullName }}
+            </p>
+          </div>
+          <button class="btn btn-ghost" @click="closeProjectsModal" style="padding: 0.5rem; background: transparent; border: none; cursor: pointer; color: #6b7280;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.25rem; height: 1.25rem;">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body" style="padding: 2rem; overflow-y: auto; flex: 1;">
+          <ProjectAssignment
+            v-if="projectsUser"
+            v-model="selectedProjects"
+            :disabled="isAssigningProjects"
+          />
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 1rem; padding: 1.5rem 2rem; border-top: 1px solid #e5e7eb;">
+          <button class="btn btn-secondary" @click="closeProjectsModal" :disabled="isAssigningProjects">
+            Cancel
+          </button>
+          <button class="btn btn-primary" @click="saveProjectAssignments" :disabled="isAssigningProjects">
+            {{ isAssigningProjects ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -388,6 +463,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import api from '@/api';
 import { getUsers, updateUser, deleteUser, createUser, type UserData } from '../api';
 import { useAuthStore } from '../stores/auth';
+import ProjectAssignment from '../components/ProjectAssignment.vue';
 
 // Complaint Categories
 interface ComplaintCategory {
@@ -463,6 +539,12 @@ const pageSize = ref(10);
 
 const editingUser = ref<User | null>(null);
 const showEditUserModal = ref(false);
+
+// Project assignment modal state
+const showProjectsModal = ref(false);
+const projectsUser = ref<User | null>(null);
+const selectedProjects = ref<number[]>([]);
+const isAssigningProjects = ref(false);
 
 const roles: UserData['role'][] = ['Super Admin', 'Admin', 'Manager', 'Agent', 'User'];
 
@@ -683,6 +765,47 @@ const updateUserHandler = async () => {
 
 const editUser = (user: User) => {
   openEditModal(user);
+};
+
+// Project assignment modal functions
+const openProjectsModal = async (user: User) => {
+  projectsUser.value = user;
+  showProjectsModal.value = true;
+
+  // Fetch user's current project assignments
+  try {
+    const memberResponse = await api.get(`/users/${user.id}/projects`);
+    selectedProjects.value = memberResponse.data.map((p: any) => p.id);
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    selectedProjects.value = [];
+  }
+};
+
+const closeProjectsModal = () => {
+  showProjectsModal.value = false;
+  projectsUser.value = null;
+  selectedProjects.value = [];
+};
+
+const saveProjectAssignments = async () => {
+  if (!projectsUser.value) return;
+
+  isAssigningProjects.value = true;
+  try {
+    // Call backend API to update user's project assignments
+    await api.put(`/users/${projectsUser.value.id}/projects`, {
+      projectIds: selectedProjects.value
+    });
+
+    alert('Project assignments updated successfully!');
+    closeProjectsModal();
+  } catch (error: any) {
+    console.error('Error saving project assignments:', error);
+    alert(error.response?.data?.message || 'Error saving project assignments. Please try again.');
+  } finally {
+    isAssigningProjects.value = false;
+  }
 };
 
 const getRoleClass = (role: string) => {
@@ -1218,6 +1341,13 @@ watch(showEditUserModal, (newVal, oldVal) => {
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
+}
+
+.modal-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0.25rem 0 0 0;
+  font-weight: 400;
 }
 
 .modal-body {

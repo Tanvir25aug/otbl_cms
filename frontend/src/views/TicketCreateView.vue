@@ -28,22 +28,26 @@ export default {
     <div class="form-card">
       <form @submit.prevent="createTicket" class="ticket-form">
 
-        <!-- Title Field -->
+        <!-- Title Field (from Complaint Category) -->
         <div class="form-group">
-          <label for="title" class="form-label">
+          <label for="categoryId" class="form-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
-            Ticket Title
+            Ticket Title (Select Category)
           </label>
-          <input
-            type="text"
-            class="form-control"
+          <select
+            class="form-select"
             :class="{ 'is-invalid': titleError }"
-            id="title"
-            placeholder="Enter ticket title"
-            v-model="title"
+            id="categoryId"
+            v-model.number="categoryId"
+            @change="onCategoryChange"
           >
+            <option :value="null">Select Ticket Category</option>
+            <option v-for="cat in complaintCategories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
           <div class="error-message" v-if="titleError">
             {{ titleError }}
           </div>
@@ -71,52 +75,21 @@ export default {
           </div>
         </div>
 
-        <!-- Category and Priority Row -->
-        <div class="form-row">
-          <div class="form-group">
-            <label for="category" class="form-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h7l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
-              </svg>
-              Category
-            </label>
-            <select class="form-select" id="category" v-model="category">
-              <option value="">Select Category</option>
-              <option value="1">Others</option>
-              <option value="2">Bill Stop</option>
-              <option value="3">Over Billing</option>
-              <option value="4">Phone Number Update</option>
-              <option value="6">NIC Problem</option>
-              <option value="9">Need to field visit</option>
-              <option value="10">Need to Connect This Meter Physically</option>
-              <option value="11">No Electricity</option>
-              <option value="12">Swap Issue</option>
-              <option value="13">Need To Connect</option>
-              <option value="15">Balance Inquery</option>
-              <option value="16">Meter Bypass</option>
-              <option value="17">Apps Problem</option>
-              <option value="18">Recharge History</option>
-              <option value="19">Information</option>
-              <option value="20">Meter Replacement</option>
-              <option value="21">Migration Issue</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="priority" class="form-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              Priority
-            </label>
-            <select class="form-select" id="priority" v-model="priority">
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-            </select>
-          </div>
+        <!-- Priority -->
+        <div class="form-group">
+          <label for="priority" class="form-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Priority
+          </label>
+          <select class="form-select" id="priority" v-model="priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
         </div>
 
         <!-- Type and Severity Row -->
@@ -133,6 +106,10 @@ export default {
               <option value="Task">Task</option>
               <option value="Bug">Bug</option>
               <option value="Story">Story</option>
+              <option value="Epic">Epic</option>
+              <option value="Subtask">Subtask</option>
+              <option value="Improvement">Improvement</option>
+              <option value="New Feature">New Feature</option>
             </select>
           </div>
 
@@ -146,44 +123,62 @@ export default {
               Severity
             </label>
             <select class="form-select" id="severity" v-model="severity">
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
+              <option value="">None</option>
+              <option value="Trivial">Trivial</option>
+              <option value="Minor">Minor</option>
+              <option value="Major">Major</option>
               <option value="Critical">Critical</option>
+              <option value="Blocker">Blocker</option>
             </select>
           </div>
         </div>
 
-        <!-- Assignee and Due Date Row -->
-        <div class="form-row">
-          <div class="form-group">
-            <label for="assigneeId" class="form-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-              Assignee
-            </label>
-            <select class="form-select" id="assigneeId" v-model.number="assigneeId">
-              <option :value="null">Select Assignee</option>
-              <option v-for="user in users" :key="user.id" :value="user.id">
-                {{ user.fullName || user.username }}
-              </option>
-            </select>
+        <!-- Project Row -->
+        <div class="form-group">
+          <label for="projectId" class="form-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h7l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+            </svg>
+            Project <span class="required">*</span>
+          </label>
+          <select
+            class="form-select"
+            :class="{ 'is-invalid': projectError }"
+            id="projectId"
+            v-model.number="projectId"
+            @change="onProjectChange"
+          >
+            <option :value="null">Select Project (Required)</option>
+            <option v-for="project in projects" :key="project.id" :value="project.id">
+              {{ project.name }} ({{ project.key }})
+            </option>
+          </select>
+          <div class="error-message" v-if="projectError">
+            {{ projectError }}
           </div>
+          <small class="form-hint" v-if="projects.length === 0 && !loadingProjects">
+            No projects available. Please contact your administrator.
+          </small>
+        </div>
 
-          <div class="form-group">
-            <label for="dueDate" class="form-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              Due Date
-            </label>
-            <input type="date" class="form-control" id="dueDate" v-model="dueDate">
-          </div>
+        <!-- Assignee -->
+        <div class="form-group">
+          <label for="assigneeId" class="form-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Assignee
+          </label>
+          <select class="form-select" id="assigneeId" v-model.number="assigneeId" :disabled="!projectId">
+            <option :value="null">{{ projectId ? 'Select Assignee (Optional)' : 'Select a project first' }}</option>
+            <option v-for="user in (projectMembers.length > 0 ? projectMembers : users)" :key="user.id" :value="user.id">
+              {{ user.fullName || user.username || user.email }}
+            </option>
+          </select>
+          <small class="form-hint" v-if="projectId && projectMembers.length > 0">
+            Showing project members only
+          </small>
         </div>
 
         <!-- File Upload Section -->
@@ -246,7 +241,7 @@ export default {
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import apiClient from '../api';
 import { useRouter } from 'vue-router';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
@@ -258,18 +253,36 @@ interface User {
   fullName?: string;
 }
 
+interface ComplaintCategory {
+  id: number;
+  name: string;
+}
+
+interface Project {
+  id: number;
+  name: string;
+  key: string;
+  status: string;
+}
+
+const categoryId = ref<number | null>(null);
 const title = ref('');
 const description = ref('');
 const priority = ref('Medium');
-const category = ref('');
 const type = ref('Task');
-const severity = ref('Medium');
+const severity = ref('');
 const dueDate = ref<string | null>(null);
 const assigneeId = ref<number | null>(null);
+const projectId = ref<number | null>(null);
 const titleError = ref('');
 const descriptionError = ref('');
+const projectError = ref('');
 const isSubmitting = ref(false);
+const loadingProjects = ref(false);
 const users = ref<User[]>([]);
+const projects = ref<Project[]>([]);
+const projectMembers = ref<User[]>([]);
+const complaintCategories = ref<ComplaintCategory[]>([]);
 const attachedFiles = ref<File[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
 const router = useRouter();
@@ -287,13 +300,60 @@ const editorConfig = {
   ]
 };
 
-// Fetch users on component mount
+const onCategoryChange = () => {
+  // Set title to selected category name
+  if (categoryId.value) {
+    const selectedCategory = complaintCategories.value.find(cat => cat.id === categoryId.value);
+    if (selectedCategory) {
+      title.value = selectedCategory.name;
+    }
+  } else {
+    title.value = '';
+  }
+};
+
+const onProjectChange = async () => {
+  // Fetch project members when project is selected
+  projectError.value = '';
+  assigneeId.value = null; // Reset assignee
+  projectMembers.value = [];
+
+  if (projectId.value) {
+    try {
+      const response = await apiClient.get(`/projects/${projectId.value}/members`);
+      projectMembers.value = response.data.map((pm: any) => pm.user);
+    } catch (error) {
+      console.error('Error fetching project members:', error);
+    }
+  }
+};
+
+// Fetch data on component mount
 onMounted(async () => {
   try {
-    const response = await apiClient.get('/users');
-    users.value = response.data;
+    loadingProjects.value = true;
+
+    // Fetch all required data in parallel
+    const [usersRes, projectsRes, categoriesRes] = await Promise.all([
+      apiClient.get('/users'),
+      apiClient.get('/projects/my-projects'), // Fetch only user's assigned projects
+      apiClient.get('/complaint-categories')
+    ]);
+
+    users.value = usersRes.data;
+    projects.value = projectsRes.data;
+    complaintCategories.value = categoriesRes.data;
+
+    // Auto-select project if user has only one
+    if (projects.value.length === 1) {
+      projectId.value = projects.value[0].id;
+      await onProjectChange();
+    }
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching data:', error);
+    projectError.value = 'Failed to load projects. Please refresh the page.';
+  } finally {
+    loadingProjects.value = false;
   }
 });
 
@@ -322,15 +382,21 @@ const formatFileSize = (bytes: number): string => {
 const validateForm = () => {
   titleError.value = '';
   descriptionError.value = '';
+  projectError.value = '';
   let isValid = true;
 
-  if (!title.value) {
-    titleError.value = 'Title is required.';
+  if (!categoryId.value) {
+    titleError.value = 'Please select a ticket category.';
     isValid = false;
   }
 
   if (!description.value) {
     descriptionError.value = 'Description is required.';
+    isValid = false;
+  }
+
+  if (!projectId.value) {
+    projectError.value = 'Project is required. Please select a project.';
     isValid = false;
   }
 
@@ -349,9 +415,12 @@ const createTicket = async () => {
     formData.append('title', title.value);
     formData.append('description', description.value);
     formData.append('priority', priority.value);
-    formData.append('category', category.value);
+    formData.append('category', categoryId.value?.toString() || '');
     formData.append('type', type.value);
-    formData.append('severity', severity.value);
+
+    if (severity.value) {
+      formData.append('severity', severity.value);
+    }
 
     if (dueDate.value) {
       formData.append('dueDate', dueDate.value);
@@ -359,6 +428,10 @@ const createTicket = async () => {
 
     if (assigneeId.value) {
       formData.append('assigneeId', assigneeId.value.toString());
+    }
+
+    if (projectId.value) {
+      formData.append('projectId', projectId.value.toString());
     }
 
     // Append files if any
@@ -375,7 +448,7 @@ const createTicket = async () => {
   } catch (error: any) {
     console.error('Error creating ticket', error);
     if (error.response && error.response.data && error.response.data.message) {
-      titleError.value = 'Error creating ticket.';
+      titleError.value = error.response.data.message;
     } else {
       titleError.value = 'An unexpected error occurred.';
     }
@@ -617,6 +690,21 @@ const createTicket = async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Form Hints */
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-xs);
+  font-style: italic;
+  display: block;
+}
+
+/* Required Field Indicator */
+.required {
+  color: #ef4444;
+  margin-left: 0.25rem;
 }
 
 /* CKEditor Customization */

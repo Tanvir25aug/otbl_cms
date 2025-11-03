@@ -22,6 +22,8 @@ const complaintCategoryRoutes = require('./complaintCategories');
 const billStopRoutes = require('./billStop');
 const telegramNotificationRoutes = require('./telegramNotifications');
 const telegramRoutes = require('./telegram');
+const analyticsRoutes = require('./analytics');
+const exportRoutes = require('./export');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes); // Added user routes
@@ -46,5 +48,7 @@ router.use('/complaints', complaintRoutes);
 router.use('/complaint-categories', complaintCategoryRoutes);
 router.use('/telegram-notifications', telegramNotificationRoutes);
 router.use('/telegram', telegramRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/export', exportRoutes);
 
 module.exports = router;

@@ -76,7 +76,7 @@
                 </span>
               </td>
               <td>
-                <span class="text-muted">{{ ticket.assigneeId || '-' }}</span>
+                <span class="text-muted">{{ ticket.assignee?.fullName || ticket.assignee?.email || 'Unassigned' }}</span>
               </td>
               <td>
                 <div class="action-buttons">

@@ -1,4 +1,4 @@
-const { User, Ticket, Notification } = require('../models');
+const { User, Ticket, Notification, ProjectMember, Project } = require('../models');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
@@ -92,7 +92,7 @@ exports.updateMe = async (req, res) => {
 // @route   POST /api/users
 // @access  Private (Super Admin, Admin)
 exports.createUser = async (req, res) => {
-  const { fullName, email, password, role, designation, division } = req.body;
+  const { fullName, email, password, role, designation, division, projects } = req.body;
 
   try {
     // Check if user already exists
@@ -100,7 +100,7 @@ exports.createUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
@@ -112,6 +112,16 @@ exports.createUser = async (req, res) => {
       division,
       status: 'active' // Default status
     });
+
+    // Assign projects if provided
+    if (projects && Array.isArray(projects) && projects.length > 0) {
+      const projectMemberships = projects.map(projectId => ({
+        projectId,
+        userId: newUser.id,
+        role: 'member'
+      }));
+      await ProjectMember.bulkCreate(projectMemberships);
+    }
 
     const userResponse = { ...newUser.toJSON() };
     delete userResponse.password; // Ensure password hash is not sent back
@@ -207,4 +217,78 @@ exports.deleteUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error deleting user', error: error.message });
     }
+};
+
+// @desc    Get user's assigned projects
+// @route   GET /api/users/:id/projects
+// @access  Private (Admin, Super Admin)
+exports.getUserProjects = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Check if user exists
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get user's project memberships
+    const projectMemberships = await ProjectMember.findAll({
+      where: { userId },
+      include: [{
+        model: Project,
+        as: 'project',
+        attributes: ['id', 'name', 'key', 'description', 'status']
+      }]
+    });
+
+    const projects = projectMemberships.map(pm => pm.project);
+
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    res.status(500).json({ message: 'Error fetching user projects', error: error.message });
+  }
+};
+
+// @desc    Update user's project assignments
+// @route   PUT /api/users/:id/projects
+// @access  Private (Admin, Super Admin)
+exports.updateUserProjects = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { projectIds } = req.body;
+
+    // Validate input
+    if (!Array.isArray(projectIds)) {
+      return res.status(400).json({ message: 'projectIds must be an array' });
+    }
+
+    // Check if user exists
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Remove all existing project memberships
+    await ProjectMember.destroy({ where: { userId } });
+
+    // Create new project memberships
+    if (projectIds.length > 0) {
+      const projectMemberships = projectIds.map(projectId => ({
+        projectId,
+        userId,
+        role: 'member'
+      }));
+      await ProjectMember.bulkCreate(projectMemberships);
+    }
+
+    res.status(200).json({
+      message: 'User project assignments updated successfully',
+      projectCount: projectIds.length
+    });
+  } catch (error) {
+    console.error('Error updating user projects:', error);
+    res.status(500).json({ message: 'Error updating user projects', error: error.message });
+  }
 };

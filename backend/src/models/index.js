@@ -24,6 +24,8 @@ const Sprint = require('./Sprint');
 const TicketHistory = require('./TicketHistory');
 const TicketAttachment = require('./TicketAttachment');
 const CommentAttachment = require('./CommentAttachment');
+const TimeLog = require('./TimeLog');
+const ProjectMember = require('./ProjectMember');
 
 
 const models = {
@@ -51,7 +53,9 @@ const models = {
   Sprint,
   TicketHistory,
   TicketAttachment,
-  CommentAttachment
+  CommentAttachment,
+  TimeLog,
+  ProjectMember
 };
 
 Comment.belongsTo(Ticket, { foreignKey: 'ticket_id', onDelete: 'CASCADE' });
@@ -62,6 +66,7 @@ User.hasMany(Comment, { foreignKey: 'user_id' });
 
 // Notification associations (optional)
 Notification.belongsTo(User, { foreignKey: 'recipientUserId', as: 'recipientUser' });
+Notification.belongsTo(User, { foreignKey: 'actorUserId', as: 'actor' });
 Notification.belongsTo(Ticket, { foreignKey: 'ticketId', as: 'ticket' });
 
 // Ticket associations
@@ -81,9 +86,15 @@ TicketLink.belongsTo(Ticket, { foreignKey: 'targetTicketId', as: 'target' });
 
 // TicketHistory associations
 TicketHistory.belongsTo(Ticket, { foreignKey: 'ticketId', onDelete: 'CASCADE' });
-TicketHistory.belongsTo(User, { foreignKey: 'userId' });
+TicketHistory.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Ticket.hasMany(TicketHistory, { foreignKey: 'ticketId', as: 'history' });
 User.hasMany(TicketHistory, { foreignKey: 'userId' });
+
+// TimeLog associations
+TimeLog.belongsTo(Ticket, { foreignKey: 'ticketId', onDelete: 'CASCADE' });
+TimeLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Ticket.hasMany(TimeLog, { foreignKey: 'ticketId', as: 'timeLogs' });
+User.hasMany(TimeLog, { foreignKey: 'userId' });
 
 // TicketAttachment associations
 TicketAttachment.belongsTo(Ticket, { foreignKey: 'ticketId', onDelete: 'CASCADE' });
@@ -121,6 +132,26 @@ User.belongsToMany(Team, { as: 'teams', through: TeamMember, foreignKey: 'userId
 
 Project.belongsTo(User, { as: 'creator', foreignKey: 'createdBy' });
 User.hasMany(Project, { as: 'createdProjects', foreignKey: 'createdBy' });
+
+// ProjectMember associations (Project-based access control)
+ProjectMember.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+ProjectMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Project.hasMany(ProjectMember, { foreignKey: 'projectId', as: 'members' });
+User.hasMany(ProjectMember, { foreignKey: 'userId', as: 'projectMemberships' });
+
+// Many-to-Many: Projects <-> Users through ProjectMembers
+Project.belongsToMany(User, {
+  through: ProjectMember,
+  foreignKey: 'projectId',
+  otherKey: 'userId',
+  as: 'projectUsers'
+});
+User.belongsToMany(Project, {
+  through: ProjectMember,
+  foreignKey: 'userId',
+  otherKey: 'projectId',
+  as: 'assignedProjects'
+});
 
 // TelegramNotificationSetting associations
 TelegramNotificationSetting.belongsTo(ComplaintCategory, { foreignKey: 'categoryId', as: 'category' });

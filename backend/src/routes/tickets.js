@@ -10,14 +10,22 @@ const {
   deleteTicket,
   getTicketCount,
   assignTicket,
+  assignProject,
   linkTickets,
   unlinkTickets,
   addWatcher,
   removeWatcher,
   logTime,
+  getTimeLogs,
   getTicketHistory,
   toggleFlag,
-  archiveTicket
+  archiveTicket,
+  assignToMe,
+  markUrgent,
+  closeTicket,
+  reopenTicket,
+  cloneTicket,
+  changeStatus
 } = require('../controllers/ticketController');
 const { addComment, getCommentsByTicketId } = require('../controllers/commentController');
 const { protect, hasRole } = require('../middleware/authMiddleware');
@@ -71,6 +79,7 @@ router.route('/:id/comments')
 
 // Assignment and linking
 router.put('/:id/assign', hasRole('Super Admin', 'Admin', 'Manager'), assignTicket);
+router.put('/:id/assign-project', hasRole('Super Admin', 'Admin', 'Manager'), assignProject);
 router.post('/:id/link', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), linkTickets);
 router.post('/:id/unlink', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), unlinkTickets);
 
@@ -80,6 +89,7 @@ router.delete('/:id/watchers', hasRole('Super Admin', 'Admin', 'Manager', 'Agent
 
 // Time tracking
 router.post('/:id/log-time', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), logTime);
+router.get('/:id/time-logs', getTimeLogs);
 
 // History
 router.get('/:id/history', getTicketHistory);
@@ -87,5 +97,13 @@ router.get('/:id/history', getTicketHistory);
 // Flag and Archive
 router.post('/:id/flag', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), toggleFlag);
 router.post('/:id/archive', hasRole('Super Admin', 'Admin', 'Manager'), archiveTicket);
+
+// Quick Actions
+router.post('/:id/assign-to-me', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), assignToMe);
+router.post('/:id/mark-urgent', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), markUrgent);
+router.post('/:id/close', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), closeTicket);
+router.post('/:id/reopen', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), reopenTicket);
+router.post('/:id/clone', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), cloneTicket);
+router.patch('/:id/status', hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), changeStatus);
 
 module.exports = router;
