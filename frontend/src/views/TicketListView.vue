@@ -128,6 +128,11 @@ interface Ticket {
   status: string;
   priority: string;
   assigneeId: number | null;
+  assignee?: {
+    id: number;
+    fullName?: string;
+    email: string;
+  };
 }
 
 const tickets = ref<Ticket[]>([]);

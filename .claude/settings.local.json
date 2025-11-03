@@ -17,7 +17,9 @@
       "Bash(git add:*)",
       "Bash(if exist \"backend\\nul\" del \"backend\\nul\")",
       "Bash(if exist \"frontend\\nul\" del \"frontend\\nul\")",
-      "Bash(if exist \"nul\" del \"nul\")"
+      "Bash(if exist \"nul\" del \"nul\")",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
