@@ -60,7 +60,7 @@ const upload = multer({
 router.use(protect);
 
 router.route('/count')
-    .get(hasRole('Super Admin', 'Admin', 'Manager'), getTicketCount);
+    .get(hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), getTicketCount);
 
 router.route('/')
   .get(hasRole('Super Admin', 'Admin', 'Manager', 'Agent'), getAllTickets)
