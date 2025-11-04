@@ -338,11 +338,53 @@ exports.assignTicket = async (req, res) => {
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
     const oldAssigneeId = ticket.assigneeId;
-    const user = assigneeId ? await User.findByPk(assigneeId) : null;
-    if (assigneeId && !user) return res.status(404).json({ message: 'Assignee not found' });
+    const newAssignee = assigneeId ? await User.findByPk(assigneeId) : null;
+    if (assigneeId && !newAssignee) return res.status(404).json({ message: 'Assignee not found' });
+
+    const oldAssignee = oldAssigneeId ? await User.findByPk(oldAssigneeId) : null;
 
     ticket.assigneeId = assigneeId || null;
     await ticket.save();
+
+    // Create history entry with detailed reassignment information
+    let historyDescription = '';
+    let historyAction = '';
+    let oldValue = null;
+    let newValue = null;
+
+    if (oldAssigneeId && oldAssigneeId !== assigneeId) {
+      // Reassignment
+      historyAction = 'reassigned';
+      const oldName = oldAssignee ? (oldAssignee.fullName || oldAssignee.email) : 'Unassigned';
+      const newName = newAssignee ? (newAssignee.fullName || newAssignee.email) : 'Unassigned';
+      oldValue = oldName;
+      newValue = newName;
+      historyDescription = `Ticket reassigned from ${oldName} to ${newName}`;
+    } else if (!oldAssigneeId && assigneeId) {
+      // First assignment
+      historyAction = 'assigned';
+      const newName = newAssignee ? (newAssignee.fullName || newAssignee.email) : 'Unknown';
+      newValue = newName;
+      historyDescription = `Ticket assigned to ${newName}`;
+    } else if (oldAssigneeId && !assigneeId) {
+      // Unassignment
+      historyAction = 'unassigned';
+      const oldName = oldAssignee ? (oldAssignee.fullName || oldAssignee.email) : 'Unknown';
+      oldValue = oldName;
+      historyDescription = `Ticket unassigned from ${oldName}`;
+    }
+
+    if (historyDescription) {
+      await TicketHistory.create({
+        ticketId: ticket.id,
+        userId: req.user.id,
+        action: historyAction,
+        field: 'assignee',
+        oldValue: oldValue,
+        newValue: newValue,
+        description: historyDescription,
+      });
+    }
 
     // Fetch ticket with all includes to return complete data
     const updatedTicket = await Ticket.findByPk(req.params.id, {
@@ -356,14 +398,13 @@ exports.assignTicket = async (req, res) => {
 
     // Send notification
     try {
-      if (user && req.user) {
+      if (newAssignee && req.user) {
         if (oldAssigneeId && oldAssigneeId !== assigneeId) {
           // Reassignment
-          const oldAssignee = oldAssigneeId ? await User.findByPk(oldAssigneeId) : null;
-          await notifyTicketReassigned(ticket, user, oldAssignee, req.user);
+          await notifyTicketReassigned(ticket, newAssignee, oldAssignee, req.user);
         } else if (!oldAssigneeId) {
           // First assignment
-          await notifyTicketAssigned(ticket, user, req.user);
+          await notifyTicketAssigned(ticket, newAssignee, req.user);
         }
       }
     } catch (notifError) {

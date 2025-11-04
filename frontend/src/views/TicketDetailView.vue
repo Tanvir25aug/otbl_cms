@@ -77,15 +77,15 @@
           </div>
         </div>
 
-        <div class="info-card category-card">
+        <div class="info-card project-card">
           <div class="info-card__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 4h7l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
             </svg>
           </div>
           <div class="info-card__content">
-            <div class="info-card__label">Category</div>
-            <span class="category-badge">{{ ticket.category || 'General' }}</span>
+            <div class="info-card__label">Project</div>
+            <span class="project-badge">{{ ticket.project?.name || 'General' }}</span>
           </div>
         </div>
 
@@ -99,6 +99,19 @@
           <div class="info-card__content">
             <div class="info-card__label">Type</div>
             <span class="type-badge">{{ ticket.type || 'Task' }}</span>
+          </div>
+        </div>
+
+        <div class="info-card creator-card">
+          <div class="info-card__icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="info-card__content">
+            <div class="info-card__label">Created By</div>
+            <span class="creator-badge">{{ ticket.reporter?.fullName || ticket.reporter?.email || 'Unknown' }}</span>
           </div>
         </div>
       </div>
@@ -795,13 +808,23 @@ const addComment = async () => {
   color: white;
 }
 
-.category-badge,
+.project-badge,
 .type-badge {
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-full);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: inline-block;
+}
+
+.creator-badge {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   display: inline-block;
 }
