@@ -92,6 +92,7 @@ class TelegramService {
         // Location
         if (complaint.customerInfo) {
             message += `\n📍 <b>Location:</b>\n`;
+            message += `   • Address: ${complaint.customerInfo.Address || 'N/A'}\n`;
             message += `   • NOCS: ${complaint.customerInfo.NOCSName || 'N/A'}\n`;
             message += `   • Feeder: ${complaint.customerInfo.FeederName || complaint.customerInfo.FeederNo || 'N/A'}\n`;
         }
