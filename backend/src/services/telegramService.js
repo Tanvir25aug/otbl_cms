@@ -43,12 +43,6 @@ class TelegramService {
      * @param {object} additionalData - Additional data (billing profile, missing months, etc.)
      */
     async sendComplaintNotification(complaint, action = 'created', additionalData = {}) {
-        const statusEmoji = {
-            'Open': '🔴',
-            'In Progress': '🟡',
-            'Close': '🟢'
-        };
-
         const actionEmoji = {
             'created': '📝',
             'updated': '✏️',
@@ -58,7 +52,6 @@ class TelegramService {
 
         let message = `${actionEmoji[action] || '📢'} <b>Complaint ${action.toUpperCase()}</b>\n\n`;
         message += `🆔 <b>Complaint ID:</b> #${complaint.id}\n`;
-        message += `${statusEmoji[complaint.status] || '⚪'} <b>Status:</b> ${complaint.status}\n`;
         message += `👤 <b>Customer ID:</b> ${complaint.customerId}\n`;
 
         if (complaint.customerInfo?.CustomerName) {
