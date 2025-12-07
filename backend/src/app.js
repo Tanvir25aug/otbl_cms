@@ -6,6 +6,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 const sequelize = require('./config/database');
 const routes = require('./routes');
+const jwt = require('jsonwebtoken');
+const ConnectionLog = require('./models/ConnectionLog');
 
 dotenv.config();
 
@@ -39,11 +41,94 @@ app.get('/', (req, res) => {
   res.send('OTBL CMS Backend is running.');
 });
 
-io.on('connection', (socket) => {
-  console.log('a user connected:', socket.id);
+// Store active connections with metadata
+const activeConnections = new Map();
 
-  socket.on('disconnect', () => {
-    console.log('user disconnected:', socket.id);
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    // Allow anonymous connections but track them
+    socket.userId = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.id;
+    next();
+  } catch (error) {
+    console.error('Socket auth error:', error.message);
+    socket.userId = null;
+    next();
+  }
+});
+
+io.on('connection', async (socket) => {
+  const connectionTime = new Date();
+  const ipAddress = socket.handshake.address;
+  const userAgent = socket.handshake.headers['user-agent'];
+
+  console.log(`User connected: ${socket.userId || 'anonymous'} (${socket.id})`);
+
+  // Store connection info
+  activeConnections.set(socket.id, {
+    userId: socket.userId,
+    connectionTime,
+    ipAddress,
+    userAgent
+  });
+
+  // Log RC (Reconnect/Connect) event
+  if (socket.userId) {
+    try {
+      await ConnectionLog.create({
+        userId: socket.userId,
+        eventType: 'RC',
+        timestamp: connectionTime,
+        ipAddress,
+        userAgent,
+        socketId: socket.id,
+        metadata: {
+          headers: socket.handshake.headers
+        }
+      });
+    } catch (error) {
+      console.error('Error logging connection:', error);
+    }
+  }
+
+  socket.on('disconnect', async () => {
+    const disconnectionTime = new Date();
+    const connectionInfo = activeConnections.get(socket.id);
+
+    console.log(`User disconnected: ${socket.userId || 'anonymous'} (${socket.id})`);
+
+    // Log DC (Disconnect) event
+    if (socket.userId && connectionInfo) {
+      const duration = Math.floor((disconnectionTime - connectionInfo.connectionTime) / 1000); // in seconds
+
+      try {
+        await ConnectionLog.create({
+          userId: socket.userId,
+          eventType: 'DC',
+          timestamp: disconnectionTime,
+          ipAddress: connectionInfo.ipAddress,
+          userAgent: connectionInfo.userAgent,
+          socketId: socket.id,
+          duration,
+          metadata: {
+            connectionDuration: duration
+          }
+        });
+      } catch (error) {
+        console.error('Error logging disconnection:', error);
+      }
+    }
+
+    // Clean up
+    activeConnections.delete(socket.id);
   });
 });
 

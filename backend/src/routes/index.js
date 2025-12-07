@@ -24,6 +24,7 @@ const telegramNotificationRoutes = require('./telegramNotifications');
 const telegramRoutes = require('./telegram');
 const analyticsRoutes = require('./analytics');
 const exportRoutes = require('./export');
+const connectionLogRoutes = require('./connectionLogs');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes); // Added user routes
@@ -50,5 +51,6 @@ router.use('/telegram-notifications', telegramNotificationRoutes);
 router.use('/telegram', telegramRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/export', exportRoutes);
+router.use('/connection-logs', connectionLogRoutes);
 
 module.exports = router;

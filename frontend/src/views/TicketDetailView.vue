@@ -901,6 +901,8 @@ const addComment = async () => {
 
 .comment-content {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .comment-header {
@@ -923,6 +925,10 @@ const addComment = async () => {
 .comment-body {
   color: var(--color-text-secondary);
   line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* Comment Attachments */

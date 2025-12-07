@@ -73,6 +73,16 @@
               </router-link>
             </li>
 
+            <li class="sidebar__item" v-if="auth.isAuthenticated && (auth.user?.role === 'Manager' || auth.user?.role === 'Admin' || auth.user?.role === 'Super Admin')">
+              <router-link to="/analytics/rc-dc" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path === '/analytics/rc-dc' }" @click="closeSidebarOnMobile">
+                <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                🔌 RC/DC Analytics
+              </router-link>
+            </li>
+
             <li class="sidebar__item" v-if="auth.isAuthenticated && auth.canManageUsers">
               <router-link to="/data-fetching" class="sidebar__link" :class="{ 'sidebar__link--active': $route.path.startsWith('/data-fetching') }" @click="closeSidebarOnMobile">
                 <svg class="sidebar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

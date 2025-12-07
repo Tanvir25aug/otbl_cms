@@ -19,7 +19,16 @@
       "Bash(if exist \"frontend\\nul\" del \"frontend\\nul\")",
       "Bash(if exist \"nul\" del \"nul\")",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(nul)",
+      "Bash(move:*)",
+      "Bash(node scripts/add-command-status-column.js:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout:*)",
+      "Bash(node test-db-query.js:*)",
+      "Bash(node test-fixed-queries.js:*)"
     ],
     "deny": [],
     "ask": []

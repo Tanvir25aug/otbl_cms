@@ -26,6 +26,7 @@ const TicketAttachment = require('./TicketAttachment');
 const CommentAttachment = require('./CommentAttachment');
 const TimeLog = require('./TimeLog');
 const ProjectMember = require('./ProjectMember');
+const ConnectionLog = require('./ConnectionLog');
 
 
 const models = {
@@ -55,7 +56,8 @@ const models = {
   TicketAttachment,
   CommentAttachment,
   TimeLog,
-  ProjectMember
+  ProjectMember,
+  ConnectionLog
 };
 
 Comment.belongsTo(Ticket, { foreignKey: 'ticket_id', onDelete: 'CASCADE' });
@@ -156,6 +158,10 @@ User.belongsToMany(Project, {
 // TelegramNotificationSetting associations
 TelegramNotificationSetting.belongsTo(ComplaintCategory, { foreignKey: 'categoryId', as: 'category' });
 ComplaintCategory.hasOne(TelegramNotificationSetting, { foreignKey: 'categoryId', as: 'notificationSetting' });
+
+// ConnectionLog associations
+ConnectionLog.belongsTo(User, { foreignKey: 'userId', as: 'User' });
+User.hasMany(ConnectionLog, { foreignKey: 'userId', as: 'connectionLogs' });
 
 Object.values(models)
   .filter(model => typeof model.associate === 'function')

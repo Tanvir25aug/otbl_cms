@@ -64,7 +64,8 @@ const router = createRouter({
         // Analytics routes
         { path: 'analytics', name: 'analytics-dashboard', component: () => import('../views/analytics/OrganizationDashboard.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin'] } },
         { path: 'analytics/project/:id', name: 'project-analytics', component: () => import('../views/analytics/ProjectAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin'] } },
-        { path: 'analytics/sprint/:id', name: 'sprint-analytics', component: () => import('../views/analytics/SprintAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin', 'Agent'] } }
+        { path: 'analytics/sprint/:id', name: 'sprint-analytics', component: () => import('../views/analytics/SprintAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin', 'Agent'] } },
+        { path: 'analytics/rc-dc', name: 'rc-dc-analytics', component: () => import('../views/analytics/RCDCAnalytics.vue'), meta: { requiresAuth: true, roles: ['Manager', 'Admin', 'Super Admin'] } }
       ]
     },
     // Legacy auth routes (redirect to new routes)
