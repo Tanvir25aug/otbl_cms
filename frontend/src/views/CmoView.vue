@@ -31,23 +31,6 @@
         </div>
       </div>
 
-      <div class="group relative bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
-        <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-        <div class="relative p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-100 text-sm font-medium mb-1">Draft</p>
-              <p class="text-4xl font-bold text-white">{{ statistics.draft }}</p>
-            </div>
-            <div class="bg-white/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="group relative bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
         <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
         <div class="relative p-6">
@@ -65,23 +48,6 @@
         </div>
       </div>
 
-      <div class="group relative bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
-        <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-        <div class="relative p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-indigo-100 text-sm font-medium mb-1">Uploaded</p>
-              <p class="text-4xl font-bold text-white">{{ statistics.uploaded }}</p>
-            </div>
-            <div class="bg-white/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="group relative bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
         <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
         <div class="relative p-6">
@@ -93,6 +59,40 @@
             <div class="bg-white/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
               <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group relative bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+        <div class="relative p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-purple-100 text-sm font-medium mb-1">Revisit</p>
+              <p class="text-4xl font-bold text-white">{{ statistics.hasRevisit }}</p>
+            </div>
+            <div class="bg-white/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group relative bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
+        <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+        <div class="relative p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-teal-100 text-sm font-medium mb-1">MDM Entry</p>
+              <p class="text-4xl font-bold text-white">{{ statistics.mdmEntry }}</p>
+            </div>
+            <div class="bg-white/20 p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
           </div>
@@ -137,11 +137,8 @@
             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
           >
             <option value="">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="pending">Pending</option>
-            <option value="uploaded">Uploaded</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            <option value="0">Pending</option>
+            <option value="1">Approved</option>
           </select>
         </div>
 
@@ -153,9 +150,9 @@
             @change="fetchCMOs"
             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
           >
-            <option value="createdAt">Created Date</option>
-            <option value="customerName">Customer Name</option>
-            <option value="status">Status</option>
+            <option value="CreateDate">Created Date</option>
+            <option value="CustomerId">Customer ID</option>
+            <option value="InstallDate">Install Date</option>
           </select>
         </div>
 
@@ -258,42 +255,45 @@
           <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
             <tr>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer ID</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer Name</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mobile</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">New Meter ID</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Meter Type</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Consumer ID</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">New Meter No</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Meter No</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Reading</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">NOCS</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Feeder</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bill Group</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Synced</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">New Meter Type</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Approved</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">MDM Entry</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Revisit</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Installed By</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Install Date</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created By</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created At</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-100">
-            <tr v-for="cmo in cmos" :key="cmo.id" class="hover:bg-blue-50/50 transition-colors duration-150">
-              <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.customerId || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{{ cmo.customerName || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.mobileNumber || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.newMeterId || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.oldMeterType || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.oldMeterNumber || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.oldMeterReading || '-' }}</td>
+            <tr v-for="cmo in cmos" :key="cmo.Id" class="hover:bg-blue-50/50 transition-colors duration-150">
+              <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.CustomerId || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldConsumerId || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NewMeterNoOCR || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldMeterNoOCR || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldMeterReadingOCR || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NewMeterType || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap">
-                <span :class="getStatusClass(cmo.status)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize">
-                  {{ cmo.status || '-' }}
+                <span :class="cmo.IsApproved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                  {{ cmo.IsApproved ? 'Approved' : 'Pending' }}
                 </span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.nocs || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.feeder || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.billGroup || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm">
-                <span v-if="cmo.isSynced" class="text-green-600 font-medium">Yes</span>
+                <span v-if="cmo.IsMDMEntry" class="text-green-600 font-medium">Yes</span>
                 <span v-else class="text-gray-400">No</span>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ formatDate(cmo.created_at || cmo.createdAt) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm">
+                <span v-if="cmo.HasRevisit" class="text-orange-600 font-medium">Yes</span>
+                <span v-else class="text-gray-400">No</span>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MeterInstalledBy || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.InstallDate || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.creator?.UserName || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.CreateDate || '-' }}</td>
             </tr>
           </tbody>
         </table>
@@ -368,29 +368,28 @@ import { getCMOs, getCMOStatistics } from '../api';
 import * as XLSX from 'xlsx';
 
 interface CMORecord {
-  id: string;
-  customerId: string;
-  customerName: string;
-  mobileNumber: string;
-  newMeterId: string;
-  oldMeterType: string;
-  oldMeterNumber: string;
-  oldMeterReading: string;
-  status: string;
-  nocs: string;
-  feeder: string;
-  billGroup: string;
-  isSynced: boolean;
-  created_at?: string;
-  createdAt?: string;
+  Id: number;
+  CustomerId: string;
+  OldConsumerId: string;
+  NewMeterNoOCR: string;
+  OldMeterNoOCR: string;
+  OldMeterReadingOCR: string;
+  NewMeterType: string;
+  IsApproved: number;
+  IsMDMEntry: number;
+  HasRevisit: number;
+  MeterInstalledBy: string;
+  InstallDate: string;
+  CreateDate: string;
+  creator?: { SecurityId: number; UserId: string; UserName: string };
 }
 
 interface Statistics {
   total: number;
-  draft: number;
-  pending: number;
-  uploaded: number;
   approved: number;
+  pending: number;
+  hasRevisit: number;
+  mdmEntry: number;
 }
 
 interface Pagination {
@@ -410,7 +409,7 @@ const exporting = ref(false);
 const filters = ref({
   search: '',
   status: '',
-  sortBy: 'createdAt',
+  sortBy: 'CreateDate',
   sortOrder: 'DESC',
   page: 1,
   limit: 20
@@ -461,7 +460,7 @@ const fetchCMOs = async () => {
       sortOrder: filters.value.sortOrder
     };
     if (filters.value.search) params.search = filters.value.search;
-    if (filters.value.status) params.status = filters.value.status;
+    if (filters.value.status !== '') params.isApproved = filters.value.status;
 
     const response = await getCMOs(params);
     cmos.value = response.data.data || [];
@@ -500,7 +499,7 @@ const clearFilters = () => {
   filters.value = {
     search: '',
     status: '',
-    sortBy: 'createdAt',
+    sortBy: 'CreateDate',
     sortOrder: 'DESC',
     page: 1,
     limit: 20
@@ -517,29 +516,31 @@ const exportToExcel = async () => {
   exporting.value = true;
   try {
     // Fetch all records for export
-    const response = await getCMOs({
+    const exportParams: Record<string, any> = {
       page: 1,
       limit: 99999,
-      status: filters.value.status || undefined,
-      search: filters.value.search || undefined,
       sortBy: filters.value.sortBy,
       sortOrder: filters.value.sortOrder
-    });
+    };
+    if (filters.value.search) exportParams.search = filters.value.search;
+    if (filters.value.status !== '') exportParams.isApproved = filters.value.status;
+
+    const response = await getCMOs(exportParams);
 
     const allRecords = (response.data.data || []).map((cmo: CMORecord) => ({
-      'Customer ID': cmo.customerId || '',
-      'Customer Name': cmo.customerName || '',
-      'Mobile': cmo.mobileNumber || '',
-      'New Meter ID': cmo.newMeterId || '',
-      'Old Meter Type': cmo.oldMeterType || '',
-      'Old Meter Number': cmo.oldMeterNumber || '',
-      'Old Meter Reading': cmo.oldMeterReading || '',
-      'Status': cmo.status || '',
-      'NOCS': cmo.nocs || '',
-      'Feeder': cmo.feeder || '',
-      'Bill Group': cmo.billGroup || '',
-      'Synced': cmo.isSynced ? 'Yes' : 'No',
-      'Created At': formatDate(cmo.created_at || cmo.createdAt)
+      'Customer ID': cmo.CustomerId || '',
+      'Old Consumer ID': cmo.OldConsumerId || '',
+      'New Meter No': cmo.NewMeterNoOCR || '',
+      'Old Meter No': cmo.OldMeterNoOCR || '',
+      'Old Reading': cmo.OldMeterReadingOCR || '',
+      'New Meter Type': cmo.NewMeterType || '',
+      'Approved': cmo.IsApproved ? 'Yes' : 'No',
+      'MDM Entry': cmo.IsMDMEntry ? 'Yes' : 'No',
+      'Revisit': cmo.HasRevisit ? 'Yes' : 'No',
+      'Installed By': cmo.MeterInstalledBy || '',
+      'Install Date': cmo.InstallDate || '',
+      'Created By': cmo.creator?.UserName || '',
+      'Created At': cmo.CreateDate || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(allRecords);
@@ -553,31 +554,6 @@ const exportToExcel = async () => {
   }
 };
 
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '-';
-  try {
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return dateStr;
-  }
-};
-
-const getStatusClass = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'draft': return 'bg-gray-100 text-gray-700';
-    case 'pending': return 'bg-yellow-100 text-yellow-800';
-    case 'uploaded': return 'bg-indigo-100 text-indigo-700';
-    case 'approved': return 'bg-green-100 text-green-800';
-    case 'rejected': return 'bg-red-100 text-red-800';
-    default: return 'bg-gray-100 text-gray-600';
-  }
-};
 
 onMounted(() => {
   fetchCMOs();

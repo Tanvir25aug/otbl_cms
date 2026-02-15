@@ -46,17 +46,17 @@ const getCmoApiToken = async () => {
 exports.getCMOs = async (req, res) => {
   try {
     const token = await getCmoApiToken();
-    const { page, limit, status, search, sortBy, sortOrder } = req.query;
+    const { page, limit, isApproved, search, sortBy, sortOrder } = req.query;
 
     const params = {};
     if (page) params.page = page;
     if (limit) params.limit = limit;
-    if (status) params.status = status;
+    if (isApproved !== undefined && isApproved !== '') params.isApproved = isApproved;
     if (search) params.search = search;
     if (sortBy) params.sortBy = sortBy;
     if (sortOrder) params.sortOrder = sortOrder;
 
-    const response = await axios.get(`${CMO_API_URL}/cmo`, {
+    const response = await axios.get(`${CMO_API_URL}/cmo/cms-list`, {
       headers: { Authorization: `Bearer ${token}` },
       params,
       timeout: 30000
@@ -83,7 +83,7 @@ exports.getCMOStatistics = async (req, res) => {
   try {
     const token = await getCmoApiToken();
 
-    const response = await axios.get(`${CMO_API_URL}/cmo/statistics`, {
+    const response = await axios.get(`${CMO_API_URL}/cmo/cms-statistics`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 30000
     });
