@@ -193,7 +193,20 @@
           Showing {{ cmos.length }} of {{ pagination.total }} records — Page {{ pagination.page }} of {{ pagination.totalPages }}
         </span>
       </div>
-      <div class="flex gap-3">
+      <div class="flex gap-3 flex-wrap">
+        <button
+          @click="runMDMCheck"
+          :disabled="checkingMDM"
+          class="group px-4 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        >
+          <svg v-if="!checkingMDM" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10" />
+          </svg>
+          {{ checkingMDM ? 'Checking MDM...' : 'Check MDM Entry' }}
+        </button>
         <button
           @click="exportToExcel"
           :disabled="cmos.length === 0 || exporting"
@@ -219,6 +232,26 @@
           Refresh
         </button>
       </div>
+    </div>
+
+    <!-- MDM Check Result Banner -->
+    <div v-if="mdmResult" class="bg-teal-50 border border-teal-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <p class="font-medium text-teal-800">MDM Entry Check Complete</p>
+          <p class="text-sm text-teal-600">
+            Checked {{ mdmResult.checked }} records | Found {{ mdmResult.foundInCustomerDB }} in Customer DB | Updated {{ mdmResult.updated }} records
+          </p>
+        </div>
+      </div>
+      <button @click="mdmResult = null" class="text-teal-400 hover:text-teal-600 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
     <!-- Loading State -->
@@ -364,7 +397,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getCMOs, getCMOStatistics } from '../api';
+import { getCMOs, getCMOStatistics, checkMDMEntry } from '../api';
 import * as XLSX from 'xlsx';
 
 interface CMORecord {
@@ -405,6 +438,8 @@ const pagination = ref<Pagination | null>(null);
 const loading = ref(false);
 const error = ref('');
 const exporting = ref(false);
+const checkingMDM = ref(false);
+const mdmResult = ref<{ checked: number; foundInCustomerDB: number; updated: number } | null>(null);
 
 const filters = ref({
   search: '',
@@ -554,6 +589,21 @@ const exportToExcel = async () => {
   }
 };
 
+
+const runMDMCheck = async () => {
+  checkingMDM.value = true;
+  mdmResult.value = null;
+  try {
+    const response = await checkMDMEntry();
+    mdmResult.value = response.data.data || null;
+    // Refresh data and statistics after MDM check
+    await Promise.all([fetchCMOs(), fetchStatistics()]);
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message || 'Failed to check MDM entries');
+  } finally {
+    checkingMDM.value = false;
+  }
+};
 
 onMounted(() => {
   fetchCMOs();

@@ -77,6 +77,32 @@ exports.getCMOs = async (req, res) => {
 };
 
 /**
+ * POST /api/cmo/check-mdm-entry — Proxy to CMO API POST /api/cmo/check-mdm-entry
+ * Checks all CMO records against Customer DB and updates IsMDMEntry
+ */
+exports.checkMDMEntry = async (req, res) => {
+  try {
+    const token = await getCmoApiToken();
+
+    const response = await axios.post(`${CMO_API_URL}/cmo/check-mdm-entry`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 120000
+    });
+
+    return res.json(response.data);
+  } catch (error) {
+    console.error('CMO check MDM entry proxy error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      cachedToken = null;
+      tokenExpiry = null;
+    }
+    const statusCode = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'Failed to check MDM entries';
+    return res.status(statusCode).json({ success: false, message });
+  }
+};
+
+/**
  * GET /api/cmo/statistics — Proxy to CMO API GET /api/cmo/statistics
  */
 exports.getCMOStatistics = async (req, res) => {

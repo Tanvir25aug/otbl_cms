@@ -234,3 +234,7 @@ export const getCMOs = (params?: { page?: number; limit?: number; status?: strin
 export const getCMOStatistics = () => {
   return apiClient.get('/cmo/statistics');
 };
+
+export const checkMDMEntry = () => {
+  return apiClient.post('/cmo/check-mdm-entry');
+};
