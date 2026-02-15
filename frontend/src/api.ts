@@ -225,3 +225,12 @@ export const updateComplaintCategory = (id: number | string, categoryData: { nam
 export const deleteComplaintCategory = (id: number | string) => {
   return apiClient.delete(`/complaint-categories/${id}`);
 };
+
+// --- CMO (Change Meter Owner) --- //
+export const getCMOs = (params?: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string }) => {
+  return apiClient.get('/cmo', { params });
+};
+
+export const getCMOStatistics = () => {
+  return apiClient.get('/cmo/statistics');
+};
