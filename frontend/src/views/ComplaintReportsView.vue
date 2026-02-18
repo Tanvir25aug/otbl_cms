@@ -243,7 +243,7 @@ const percentage = (count: number) => {
 
 const closedCount = computed(() => {
   if (!data.value.statusWiseReport) return 0;
-  const closed = data.value.statusWiseReport.find((s: any) => s.status?.toLowerCase() === 'closed' || s.status?.toLowerCase() === 'resolved');
+  const closed = data.value.statusWiseReport.find((s: any) => s.status?.toLowerCase() === 'close' || s.status?.toLowerCase() === 'closed' || s.status?.toLowerCase() === 'resolved');
   return closed?.count || 0;
 });
 
@@ -324,7 +324,7 @@ const statusBadgeClass = (status: string) => {
   const s = status?.toLowerCase();
   if (s === 'open') return 'bg-blue-100 text-blue-700';
   if (s === 'in progress') return 'bg-amber-100 text-amber-700';
-  if (s === 'closed' || s === 'resolved') return 'bg-green-100 text-green-700';
+  if (s === 'close' || s === 'closed' || s === 'resolved') return 'bg-green-100 text-green-700';
   if (s === 'rejected') return 'bg-red-100 text-red-700';
   return 'bg-gray-100 text-gray-700';
 };

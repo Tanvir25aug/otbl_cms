@@ -113,7 +113,7 @@
             />
             <MetricCard
               title="Closed"
-              :value="complaintStatusCount('Closed')"
+              :value="complaintStatusCount('Close')"
               subtitle="Resolved complaints"
               icon="✅"
               variant="success"
