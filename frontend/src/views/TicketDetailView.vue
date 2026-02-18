@@ -383,6 +383,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import apiClient from '../api';
+import { API_ORIGIN } from '../config';
 import { useRoute, useRouter } from 'vue-router';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
@@ -527,7 +528,7 @@ const formatFileSize = (bytes: number): string => {
 const getAttachmentUrl = (filePath: string): string => {
   // Extract the filename from the full path
   const filename = filePath.split('\\').pop() || filePath.split('/').pop() || filePath;
-  return `http://localhost:3000/uploads/tickets/${filename}`;
+  return `${API_ORIGIN}/uploads/tickets/${filename}`;
 };
 
 const isImage = (mimeType: string): boolean => {
