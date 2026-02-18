@@ -44,7 +44,7 @@
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/complaints">Complaints</router-link>
       </li>
-      <li v-if="auth.isAuthenticated && (auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin' || auth.user?.role === 'Manager')">
+      <li v-if="auth.isAuthenticated && (auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin' || auth.user?.role === 'Manager' || auth.user?.role === 'Agent')">
         <router-link class="nav-link" to="/complaints/reports">Complaint Reports</router-link>
       </li>
       <li v-if="auth.isAuthenticated">

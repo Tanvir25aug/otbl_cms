@@ -60,7 +60,7 @@ const router = createRouter({
         { path: 'c2m-upload', name: 'c2m-upload', component: () => import('../views/C2MUploadView.vue'), meta: { roles: ['Super Admin', 'Admin', 'Manager'] } },
         { path: 'customer-support-center', name: 'customer-support-center', component: () => import('../views/CustomerSupportCenterView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin', 'Manager', 'Agent'] } },
         { path: 'complaints', name: 'complaints', component: () => import('../views/ComplaintsView.vue'), meta: { requiresAuth: true } },
-        { path: 'complaints/reports', name: 'complaint-reports', component: () => import('../views/ComplaintReportsView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin', 'Manager'] } },
+        { path: 'complaints/reports', name: 'complaint-reports', component: () => import('../views/ComplaintReportsView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin', 'Manager', 'Agent'] } },
         { path: 'telegram-notifications', name: 'telegram-notifications', component: () => import('../views/TelegramNotificationsView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin'] } },
         { path: 'cmo', name: 'cmo', component: () => import('../views/CmoView.vue'), meta: { requiresAuth: true, roles: ['Super Admin', 'Admin'] } },
         // Analytics routes
