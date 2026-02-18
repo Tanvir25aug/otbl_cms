@@ -88,6 +88,46 @@
         </div>
       </div>
 
+      <!-- Complaints Summary -->
+      <div class="complaints-section" v-if="complaintData">
+        <div class="section-card">
+          <h2>Complaints Summary</h2>
+          <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+            <MetricCard
+              title="Total Complaints"
+              :value="complaintData.totalComplaints || 0"
+              icon="📋"
+              variant="primary"
+            />
+            <MetricCard
+              title="Open"
+              :value="complaintStatusCount('Open')"
+              icon="🔵"
+              variant="info"
+            />
+            <MetricCard
+              title="In Progress"
+              :value="complaintStatusCount('In Progress')"
+              icon="🟡"
+              variant="warning"
+            />
+            <MetricCard
+              title="Closed"
+              :value="complaintStatusCount('Closed')"
+              subtitle="Resolved complaints"
+              icon="✅"
+              variant="success"
+            />
+          </div>
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary);">Category Distribution</h3>
+          <BarChart
+            v-if="complaintCategoryChartData.labels.length"
+            :chartData="complaintCategoryChartData"
+          />
+          <p v-else class="no-data">No complaint category data available</p>
+        </div>
+      </div>
+
       <!-- Top Projects -->
       <div class="projects-section">
         <div class="section-card">
@@ -138,7 +178,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import apiClient from '@/api';
+import apiClient, { getComplaintAnalytics } from '@/api';
 import MetricCard from '@/components/analytics/MetricCard.vue';
 import PieChart from '@/components/charts/PieChart.vue';
 import BarChart from '@/components/BarChart.vue';
@@ -147,6 +187,7 @@ const router = useRouter();
 const analytics = ref({});
 const loading = ref(true);
 const error = ref(null);
+const complaintData = ref(null);
 
 const hasPriorityData = computed(() => {
   return analytics.value.breakdown?.byPriority &&
@@ -178,6 +219,31 @@ const statusChartData = computed(() => {
   };
 });
 
+const complaintStatusCount = (status) => {
+  if (!complaintData.value?.statusWiseReport) return 0;
+  const found = complaintData.value.statusWiseReport.find(s => s.status === status);
+  return found?.count || 0;
+};
+
+const complaintCategoryChartData = computed(() => {
+  if (!complaintData.value?.categoryWiseReport?.length) return { labels: [], datasets: [] };
+  return {
+    labels: complaintData.value.categoryWiseReport.map(c => c.category),
+    datasets: [{
+      label: 'Complaints',
+      data: complaintData.value.categoryWiseReport.map(c => c.count),
+      backgroundColor: [
+        'rgba(99, 102, 241, 0.7)',
+        'rgba(245, 158, 11, 0.7)',
+        'rgba(16, 185, 129, 0.7)',
+        'rgba(239, 68, 68, 0.7)',
+        'rgba(139, 92, 246, 0.7)',
+        'rgba(59, 130, 246, 0.7)',
+      ],
+    }]
+  };
+});
+
 const fetchDashboard = async () => {
   loading.value = true;
   error.value = null;
@@ -193,7 +259,19 @@ const fetchDashboard = async () => {
   }
 };
 
-onMounted(fetchDashboard);
+const fetchComplaintAnalytics = async () => {
+  try {
+    const res = await getComplaintAnalytics();
+    complaintData.value = res.data;
+  } catch (err) {
+    console.error('Error fetching complaint analytics:', err);
+  }
+};
+
+onMounted(() => {
+  fetchDashboard();
+  fetchComplaintAnalytics();
+});
 </script>
 
 <style scoped>

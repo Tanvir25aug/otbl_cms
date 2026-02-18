@@ -478,19 +478,21 @@ exports.getComplaintAnalytics = async (req, res) => {
               )
             : null;
 
-        // Monthly complaints (last 12 months)
+        // Monthly complaints (last 12 months) - using strftime for SQLite compatibility
+        const sequelize = require('sequelize');
+        const monthExpr = sequelize.fn('strftime', '%Y-%m', sequelize.col('createdAt'));
         const monthlyComplaints = await Complaint.findAll({
             attributes: [
-                [require('sequelize').fn('DATE_TRUNC', 'month', require('sequelize').col('createdAt')), 'month'],
-                [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+                [monthExpr, 'month'],
+                [sequelize.fn('COUNT', sequelize.col('id')), 'count']
             ],
             where: {
                 createdAt: {
                     [Op.gte]: new Date(new Date().setMonth(new Date().getMonth() - 12))
                 }
             },
-            group: [require('sequelize').fn('DATE_TRUNC', 'month', require('sequelize').col('createdAt'))],
-            order: [[require('sequelize').fn('DATE_TRUNC', 'month', require('sequelize').col('createdAt')), 'ASC']]
+            group: [sequelize.fn('strftime', '%Y-%m', sequelize.col('createdAt'))],
+            order: [[sequelize.fn('strftime', '%Y-%m', sequelize.col('createdAt')), 'ASC']]
         });
 
         // Daily average (complaints per day in the filtered period)
