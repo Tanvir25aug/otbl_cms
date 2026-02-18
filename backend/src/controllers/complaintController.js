@@ -279,16 +279,33 @@ exports.getComplaints = async (req, res) => {
     }
 
     try {
-        const complaints = await Complaint.findAndCountAll({
-            where,
-            include: [
-                { model: User, as: 'agent', attributes: ['id', 'fullName', 'email'] },
-                { model: ComplaintCategory, attributes: ['id', 'name'] }
-            ],
-            limit: limitNum,
-            offset: (pageNum - 1) * limitNum,
-            order: [['createdAt', 'DESC']]
+        const [complaints, statusCountsRaw] = await Promise.all([
+            Complaint.findAndCountAll({
+                where,
+                include: [
+                    { model: User, as: 'agent', attributes: ['id', 'fullName', 'email'] },
+                    { model: ComplaintCategory, attributes: ['id', 'name'] }
+                ],
+                limit: limitNum,
+                offset: (pageNum - 1) * limitNum,
+                order: [['createdAt', 'DESC']]
+            }),
+            Complaint.findAll({
+                attributes: [
+                    'status',
+                    [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+                ],
+                group: ['status'],
+                raw: true
+            })
+        ]);
+
+        const statusCounts = { total: 0, Open: 0, 'In Progress': 0, Close: 0 };
+        statusCountsRaw.forEach(row => {
+            statusCounts[row.status] = parseInt(row.count) || 0;
+            statusCounts.total += parseInt(row.count) || 0;
         });
+
         res.json({
             ...complaints,
             pagination: {
@@ -296,7 +313,8 @@ exports.getComplaints = async (req, res) => {
                 limit: limitNum,
                 total: complaints.count,
                 totalPages: Math.ceil(complaints.count / limitNum)
-            }
+            },
+            statusCounts
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

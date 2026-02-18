@@ -1276,19 +1276,9 @@ const viewFormData = ref({
   status: 'Open' as 'Open' | 'In Progress' | 'Close'
 });
 
-const totalComplaints = computed(() => totalItems.value);
-
-const statusCounts = computed(() => {
-  const counts: Record<string, number> = {
-    'Open': 0,
-    'In Progress': 0,
-    'Close': 0
-  };
-  complaints.value.forEach(complaint => {
-    counts[complaint.status] = (counts[complaint.status] || 0) + 1;
-  });
-  return counts;
-});
+const globalStatusCounts = ref<Record<string, number>>({ total: 0, Open: 0, 'In Progress': 0, Close: 0 });
+const totalComplaints = computed(() => globalStatusCounts.value.total);
+const statusCounts = computed(() => globalStatusCounts.value);
 
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -1321,6 +1311,9 @@ const fetchComplaints = async () => {
     const response = await getComplaints(params);
     complaints.value = response.data.rows || [];
     totalItems.value = response.data.pagination?.total ?? response.data.count ?? 0;
+    if (response.data.statusCounts) {
+      globalStatusCounts.value = response.data.statusCounts;
+    }
   } catch (err: any) {
     console.error('Error fetching complaints:', err);
     error.value = err.response?.data?.message || 'Failed to fetch complaints';
