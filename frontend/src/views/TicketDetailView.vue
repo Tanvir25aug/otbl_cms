@@ -526,8 +526,8 @@ const formatFileSize = (bytes: number): string => {
 };
 
 const getAttachmentUrl = (filePath: string): string => {
-  // Extract the filename from the full path
-  const filename = filePath.split('\\').pop() || filePath.split('/').pop() || filePath;
+  // Extract the filename from the full path (handles both Unix and Windows paths)
+  const filename = filePath.split(/[/\\]/).pop() || filePath;
   return `${API_ORIGIN}/uploads/tickets/${filename}`;
 };
 
