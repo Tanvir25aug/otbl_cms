@@ -287,9 +287,18 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
             <tr>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer ID</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Consumer ID</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mobile</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Changed Mobile</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Secondary Mobile</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">NOCS</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Install Dt</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">New Meter No</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lat</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Long</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Consumer ID</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Meter No</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Old Reading</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">New Meter Type</th>
@@ -297,7 +306,6 @@
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">MDM Entry</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Revisit</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Installed By</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Install Date</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created By</th>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created At</th>
             </tr>
@@ -305,8 +313,17 @@
           <tbody class="bg-white divide-y divide-gray-100">
             <tr v-for="cmo in cmos" :key="cmo.Id" class="hover:bg-blue-50/50 transition-colors duration-150">
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.CustomerId || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldConsumerId || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.CustomerName || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate" :title="cmo.Address || ''">{{ cmo.Address || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.ChangedMobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.SecondaryMobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NOCS || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.InstallDate || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NewMeterNoOCR || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.Latitude || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.Longitude || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldConsumerId || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldMeterNoOCR || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.OldMeterReadingOCR || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NewMeterType || '-' }}</td>
@@ -324,7 +341,6 @@
                 <span v-else class="text-gray-400">No</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MeterInstalledBy || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.InstallDate || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.creator?.UserName || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.CreateDate || '-' }}</td>
             </tr>
@@ -397,7 +413,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getCMOs, getCMOStatistics, checkMDMEntry } from '../api';
+import { getCMOs, getCMOStatistics, checkMDMEntry, getCMOExportData } from '../api';
 import * as XLSX from 'xlsx';
 
 interface CMORecord {
@@ -415,6 +431,14 @@ interface CMORecord {
   InstallDate: string;
   CreateDate: string;
   creator?: { SecurityId: number; UserId: string; UserName: string };
+  CustomerName?: string;
+  Address?: string;
+  MobileNo?: string;
+  ChangedMobileNo?: string;
+  SecondaryMobileNo?: string;
+  NOCS?: string;
+  Latitude?: string;
+  Longitude?: string;
 }
 
 interface Statistics {
@@ -550,32 +574,24 @@ const refresh = () => {
 const exportToExcel = async () => {
   exporting.value = true;
   try {
-    // Fetch all records for export
-    const exportParams: Record<string, any> = {
-      page: 1,
-      limit: 99999,
-      sortBy: filters.value.sortBy,
-      sortOrder: filters.value.sortOrder
-    };
+    const exportParams: Record<string, any> = {};
     if (filters.value.search) exportParams.search = filters.value.search;
     if (filters.value.status !== '') exportParams.isApproved = filters.value.status;
 
-    const response = await getCMOs(exportParams);
+    const response = await getCMOExportData(exportParams);
 
-    const allRecords = (response.data.data || []).map((cmo: CMORecord) => ({
-      'Customer ID': cmo.CustomerId || '',
-      'Old Consumer ID': cmo.OldConsumerId || '',
-      'New Meter No': cmo.NewMeterNoOCR || '',
-      'Old Meter No': cmo.OldMeterNoOCR || '',
-      'Old Reading': cmo.OldMeterReadingOCR || '',
-      'New Meter Type': cmo.NewMeterType || '',
-      'Approved': cmo.IsApproved ? 'Yes' : 'No',
-      'MDM Entry': cmo.IsMDMEntry ? 'Yes' : 'No',
-      'Revisit': cmo.HasRevisit ? 'Yes' : 'No',
-      'Installed By': cmo.MeterInstalledBy || '',
-      'Install Date': cmo.InstallDate || '',
-      'Created By': cmo.creator?.UserName || '',
-      'Created At': cmo.CreateDate || ''
+    const allRecords = (response.data.data || []).map((row: any) => ({
+      'ID': row.CustomerId || '',
+      'NAME': row.CUSTOMER_NAME || '',
+      'ADDRESS': row.ADDRESS || '',
+      'MOBILE': row.MOBILE_NO || '',
+      'CHANGED MOBILE': row.CHANGED_MOBILE_NO || '',
+      'SECONDARY MOBILE': row.SECONDARY_MOBILE_NO || '',
+      'NOCS': row.NOCS || '',
+      'Install Dt': row.InstallDate || '',
+      'New Meter No.': row.NewMeterNoOCR || '',
+      'Latitude': row.Latitude || '',
+      'Longitude': row.Longitude || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(allRecords);

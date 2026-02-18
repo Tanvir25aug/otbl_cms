@@ -238,3 +238,7 @@ export const getCMOStatistics = () => {
 export const checkMDMEntry = () => {
   return apiClient.post('/cmo/check-mdm-entry');
 };
+
+export const getCMOExportData = (params?: { search?: string; isApproved?: string }) => {
+  return apiClient.get('/cmo/export', { params });
+};

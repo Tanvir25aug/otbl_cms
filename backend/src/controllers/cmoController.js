@@ -196,6 +196,38 @@ exports.checkMDMEntry = async (req, res) => {
 };
 
 /**
+ * GET /api/cmo/export — Proxy to CMO API GET /api/cmo/cms-export
+ * Passes query params: search, isApproved
+ */
+exports.exportCMOData = async (req, res) => {
+  try {
+    const token = await getCmoApiToken();
+    const { search, isApproved } = req.query;
+
+    const params = {};
+    if (search) params.search = search;
+    if (isApproved !== undefined && isApproved !== '') params.isApproved = isApproved;
+
+    const response = await axios.get(`${CMO_API_URL}/cmo/cms-export`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+      timeout: 60000
+    });
+
+    return res.json(response.data);
+  } catch (error) {
+    console.error('CMO export proxy error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      cachedToken = null;
+      tokenExpiry = null;
+    }
+    const statusCode = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'Failed to fetch CMO export data';
+    return res.status(statusCode).json({ success: false, message });
+  }
+};
+
+/**
  * GET /api/cmo/statistics — Proxy to CMO API GET /api/cmo/statistics
  */
 exports.getCMOStatistics = async (req, res) => {
