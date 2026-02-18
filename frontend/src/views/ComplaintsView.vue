@@ -52,7 +52,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
           <select
             v-model="filters.category"
-            @change="fetchComplaints"
+            @change="currentPage = 1; fetchComplaints()"
             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
           >
             <option value="">All Categories</option>
@@ -63,7 +63,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
           <select
             v-model="filters.status"
-            @change="fetchComplaints"
+            @change="currentPage = 1; fetchComplaints()"
             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
           >
             <option value="">All Status</option>
@@ -193,7 +193,7 @@
             </div>
             <div>
               <h2 class="text-xl font-bold text-gray-800">Complaints List</h2>
-              <p class="text-sm text-gray-500">Showing {{ complaints.length }} complaint(s)</p>
+              <p class="text-sm text-gray-500">Showing {{ complaints.length }} of {{ totalItems }} complaint(s) — Page {{ currentPage }} of {{ totalPages }}</p>
             </div>
           </div>
         </div>
@@ -329,6 +329,66 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+      <p class="text-sm text-gray-600">
+        Page {{ currentPage }} of {{ totalPages }} ({{ totalItems }} total complaints)
+      </p>
+      <div class="flex items-center gap-1">
+        <button
+          @click="goToPage(1)"
+          :disabled="currentPage <= 1"
+          class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          First
+        </button>
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage <= 1"
+          class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Prev
+        </button>
+
+        <template v-for="pageNum in visiblePages" :key="pageNum">
+          <button
+            v-if="pageNum === '...'"
+            disabled
+            class="px-3 py-2 text-sm text-gray-400"
+          >
+            ...
+          </button>
+          <button
+            v-else
+            @click="goToPage(pageNum as number)"
+            :class="[
+              'px-3 py-2 text-sm border rounded-lg transition-colors',
+              currentPage === pageNum
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : 'border-gray-300 hover:bg-gray-50'
+            ]"
+          >
+            {{ pageNum }}
+          </button>
+        </template>
+
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage >= totalPages"
+          class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Next
+        </button>
+        <button
+          @click="goToPage(totalPages)"
+          :disabled="currentPage >= totalPages"
+          class="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Last
+        </button>
       </div>
     </div>
 
@@ -1194,6 +1254,11 @@ const editorConfig = {
   toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'outdent', 'indent', '|', 'blockQuote', 'insertTable', 'undo', 'redo']
 };
 
+const currentPage = ref(1);
+const totalItems = ref(0);
+const itemsPerPage = 50;
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage));
+
 const filters = ref({
   search: '',
   category: '',
@@ -1211,7 +1276,7 @@ const viewFormData = ref({
   status: 'Open' as 'Open' | 'In Progress' | 'Close'
 });
 
-const totalComplaints = computed(() => complaints.value.length);
+const totalComplaints = computed(() => totalItems.value);
 
 const statusCounts = computed(() => {
   const counts: Record<string, number> = {
@@ -1232,6 +1297,7 @@ const debouncedFetch = () => {
     clearTimeout(debounceTimeout);
   }
   debounceTimeout = setTimeout(() => {
+    currentPage.value = 1;
     fetchComplaints();
   }, 500);
 };
@@ -1239,7 +1305,10 @@ const debouncedFetch = () => {
 const fetchComplaints = async () => {
   loading.value = true;
   try {
-    const params: any = {};
+    const params: any = {
+      page: currentPage.value,
+      limit: itemsPerPage
+    };
     if (filters.value.search) params.search = filters.value.search;
     if (filters.value.category) params.category = filters.value.category;
     if (filters.value.status) params.status = filters.value.status;
@@ -1251,6 +1320,7 @@ const fetchComplaints = async () => {
 
     const response = await getComplaints(params);
     complaints.value = response.data.rows || [];
+    totalItems.value = response.data.pagination?.total ?? response.data.count ?? 0;
   } catch (err: any) {
     console.error('Error fetching complaints:', err);
     error.value = err.response?.data?.message || 'Failed to fetch complaints';
@@ -1258,6 +1328,30 @@ const fetchComplaints = async () => {
     loading.value = false;
   }
 };
+
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  fetchComplaints();
+};
+
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages: (number | string)[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+    return pages;
+  }
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+});
 
 const fetchCategories = async () => {
   try {
@@ -1497,6 +1591,7 @@ const clearFilters = () => {
     category: '',
     status: ''
   };
+  currentPage.value = 1;
   fetchComplaints();
 };
 

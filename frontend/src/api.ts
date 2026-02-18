@@ -159,7 +159,7 @@ export const getCoveredMonths = (meterNo: string) => {
 };
 
 // --- Complaints --- //
-export const getComplaints = (params?: { category?: string; status?: string; search?: string; page?: number }) => {
+export const getComplaints = (params?: { category?: string; status?: string; search?: string; page?: number; limit?: number }) => {
   return apiClient.get('/complaints', { params });
 };
 

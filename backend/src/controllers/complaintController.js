@@ -253,7 +253,9 @@ exports.createComplaint = async (req, res) => {
 };
 
 exports.getComplaints = async (req, res) => {
-    const { category, status, search, excludeClose } = req.query;
+    const { category, status, search, excludeClose, page = 1, limit = 50 } = req.query;
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 50;
     let where = {};
 
     if (category) {
@@ -283,11 +285,19 @@ exports.getComplaints = async (req, res) => {
                 { model: User, as: 'agent', attributes: ['id', 'fullName', 'email'] },
                 { model: ComplaintCategory, attributes: ['id', 'name'] }
             ],
-            limit: 200,
-            offset: req.query.page ? (req.query.page - 1) * 200 : 0,
+            limit: limitNum,
+            offset: (pageNum - 1) * limitNum,
             order: [['createdAt', 'DESC']]
         });
-        res.json(complaints);
+        res.json({
+            ...complaints,
+            pagination: {
+                page: pageNum,
+                limit: limitNum,
+                total: complaints.count,
+                totalPages: Math.ceil(complaints.count / limitNum)
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
