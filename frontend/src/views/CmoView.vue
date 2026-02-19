@@ -776,11 +776,8 @@ const handleExcelUpload = (event: Event) => {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData: any[] = XLSX.utils.sheet_to_json(firstSheet);
 
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-
       uploadPreviewData.value = jsonData.map((row) => ({
-        INDEX_NO: `IDX_${row.NOCS_CODE || ''}_${dateStr}`,
+        INDEX_NO: `${row.NOCS_CODE || ''}_${Math.floor(Math.random() * 900) + 100}`,
         OLD_CONSUMER_ID: row.OLD_CONSUMER_ID ?? '',
         CUSTOMER_NAME: row.CUSTOMER_NAME ?? '',
         ADDRESS: row.ADDRESS ?? '',
