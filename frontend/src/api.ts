@@ -242,3 +242,7 @@ export const checkMDMEntry = () => {
 export const getCMOExportData = (params?: { search?: string; isApproved?: string }) => {
   return apiClient.get('/cmo/export', { params });
 };
+
+export const uploadCustomerInfo = (data: any[]) => {
+  return apiClient.post('/cmo/upload-customers', { customers: data });
+};

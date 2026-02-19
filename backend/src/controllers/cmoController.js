@@ -228,6 +228,37 @@ exports.exportCMOData = async (req, res) => {
 };
 
 /**
+ * POST /api/cmo/upload-customers — Proxy to CMO API POST /api/cmo/upload-customers
+ * Forwards customer data from Excel upload to CMO API for insertion into SQL Server
+ */
+exports.uploadCustomerInfo = async (req, res) => {
+  try {
+    const token = await getCmoApiToken();
+    const { customers } = req.body;
+
+    if (!customers || !Array.isArray(customers) || customers.length === 0) {
+      return res.status(400).json({ success: false, message: 'customers array is required and must not be empty' });
+    }
+
+    const response = await axios.post(`${CMO_API_URL}/cmo/upload-customers`, { customers }, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 120000
+    });
+
+    return res.json(response.data);
+  } catch (error) {
+    console.error('CMO upload customers proxy error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      cachedToken = null;
+      tokenExpiry = null;
+    }
+    const statusCode = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'Failed to upload customer data';
+    return res.status(statusCode).json({ success: false, message });
+  }
+};
+
+/**
  * GET /api/cmo/statistics — Proxy to CMO API GET /api/cmo/statistics
  */
 exports.getCMOStatistics = async (req, res) => {

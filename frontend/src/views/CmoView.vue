@@ -195,6 +195,15 @@
       </div>
       <div class="flex gap-3 flex-wrap">
         <button
+          @click="showUploadModal = true"
+          class="group px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Customer Info
+        </button>
+        <button
           @click="runMDMCheck"
           :disabled="checkingMDM"
           class="group px-4 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
@@ -408,12 +417,135 @@
         </button>
       </div>
     </div>
+    <!-- Upload Customer Info Modal -->
+    <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800">Add Customer Info</h2>
+            <p class="text-sm text-gray-500 mt-1">Upload an Excel file to insert customer records</p>
+          </div>
+          <button @click="closeUploadModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <!-- File Input -->
+          <div v-if="!uploadPreviewData.length" class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-indigo-400 transition-colors">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <label class="cursor-pointer">
+              <span class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 inline-block">
+                Choose Excel File
+              </span>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                @change="handleExcelUpload"
+                class="hidden"
+              />
+            </label>
+            <p class="text-gray-400 text-sm mt-3">Supports .xlsx and .xls files</p>
+          </div>
+
+          <!-- Preview Table -->
+          <div v-if="uploadPreviewData.length">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                  {{ uploadPreviewData.length }} rows
+                </span>
+                <span class="text-sm text-gray-500">{{ uploadFileName }}</span>
+              </div>
+              <button @click="clearUploadPreview" class="text-sm text-red-500 hover:text-red-700 transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear
+              </button>
+            </div>
+            <div class="overflow-x-auto border border-gray-200 rounded-xl">
+              <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">INDEX_NO</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">OLD_CONSUMER_ID</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">CUSTOMER_NAME</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">ADDRESS</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">CUST_TARIFF_CATEGORY</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">SANCTIONED_LOAD</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">CPC_CPR</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">NOCS</th>
+                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">NOCS_CODE</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr v-for="(row, idx) in uploadPreviewData" :key="idx" class="hover:bg-gray-50">
+                    <td class="px-3 py-2 text-gray-400">{{ idx + 1 }}</td>
+                    <td class="px-3 py-2 font-mono text-xs text-indigo-600">{{ row.INDEX_NO }}</td>
+                    <td class="px-3 py-2">{{ row.OLD_CONSUMER_ID }}</td>
+                    <td class="px-3 py-2">{{ row.CUSTOMER_NAME }}</td>
+                    <td class="px-3 py-2 max-w-[200px] truncate" :title="row.ADDRESS">{{ row.ADDRESS }}</td>
+                    <td class="px-3 py-2">{{ row.CUST_TARIFF_CATEGORY }}</td>
+                    <td class="px-3 py-2">{{ row.SANCTIONED_LOAD }}</td>
+                    <td class="px-3 py-2">{{ row.CPC_CPR }}</td>
+                    <td class="px-3 py-2">{{ row.NOCS }}</td>
+                    <td class="px-3 py-2">{{ row.NOCS_CODE }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Upload Result Banner -->
+          <div v-if="uploadResult" class="mt-4 p-4 rounded-xl" :class="uploadResult.errors?.length ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'">
+            <p class="font-medium" :class="uploadResult.errors?.length ? 'text-yellow-800' : 'text-green-800'">
+              Upload Complete
+            </p>
+            <p class="text-sm mt-1" :class="uploadResult.errors?.length ? 'text-yellow-600' : 'text-green-600'">
+              Inserted: {{ uploadResult.inserted }} | Skipped (duplicates): {{ uploadResult.skipped }}
+              <span v-if="uploadResult.errors?.length"> | Errors: {{ uploadResult.errors.length }}</span>
+            </p>
+            <div v-if="uploadResult.errors?.length" class="mt-2 text-xs text-yellow-700">
+              <p v-for="(err, i) in uploadResult.errors" :key="i">{{ err }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+          <button
+            @click="closeUploadModal"
+            class="px-5 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmUpload"
+            :disabled="!uploadPreviewData.length || uploading"
+            class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg v-if="uploading" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10" />
+            </svg>
+            {{ uploading ? 'Inserting...' : 'Confirm Insert' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getCMOs, getCMOStatistics, checkMDMEntry, getCMOExportData } from '../api';
+import { getCMOs, getCMOStatistics, checkMDMEntry, getCMOExportData, uploadCustomerInfo } from '../api';
 import * as XLSX from 'xlsx';
 
 interface CMORecord {
@@ -464,6 +596,13 @@ const error = ref('');
 const exporting = ref(false);
 const checkingMDM = ref(false);
 const mdmResult = ref<{ checked: number; foundInCustomerDB: number; updated: number } | null>(null);
+
+// Upload Customer Info state
+const showUploadModal = ref(false);
+const uploading = ref(false);
+const uploadPreviewData = ref<any[]>([]);
+const uploadFileName = ref('');
+const uploadResult = ref<{ inserted: number; skipped: number; errors: string[] } | null>(null);
 
 const filters = ref({
   search: '',
@@ -618,6 +757,73 @@ const runMDMCheck = async () => {
     alert(err.response?.data?.message || err.message || 'Failed to check MDM entries');
   } finally {
     checkingMDM.value = false;
+  }
+};
+
+const handleExcelUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  uploadFileName.value = file.name;
+  uploadResult.value = null;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(firstSheet);
+
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+
+      uploadPreviewData.value = jsonData.map((row) => ({
+        INDEX_NO: `IDX_${row.NOCS_CODE || ''}_${dateStr}`,
+        OLD_CONSUMER_ID: row.OLD_CONSUMER_ID ?? '',
+        CUSTOMER_NAME: row.CUSTOMER_NAME ?? '',
+        ADDRESS: row.ADDRESS ?? '',
+        CUST_TARIFF_CATEGORY: row.CUST_TARIFF_CATEGORY ?? '',
+        SANCTIONED_LOAD: row.SANCTIONED_LOAD ?? '',
+        CPC_CPR: row.CPC_CPR ?? '',
+        NOCS: row.NOCS ?? '',
+        NOCS_CODE: row.NOCS_CODE ?? ''
+      }));
+    } catch (err) {
+      console.error('Error parsing Excel file:', err);
+      alert('Failed to parse the Excel file. Please check the file format.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+
+  // Reset file input so the same file can be re-selected
+  target.value = '';
+};
+
+const clearUploadPreview = () => {
+  uploadPreviewData.value = [];
+  uploadFileName.value = '';
+  uploadResult.value = null;
+};
+
+const closeUploadModal = () => {
+  showUploadModal.value = false;
+  clearUploadPreview();
+};
+
+const confirmUpload = async () => {
+  if (!uploadPreviewData.value.length) return;
+  uploading.value = true;
+  uploadResult.value = null;
+  try {
+    const response = await uploadCustomerInfo(uploadPreviewData.value);
+    uploadResult.value = response.data.data || { inserted: 0, skipped: 0, errors: [] };
+    uploadPreviewData.value = [];
+  } catch (err: any) {
+    alert(err.response?.data?.message || err.message || 'Failed to upload customer data');
+  } finally {
+    uploading.value = false;
   }
 };
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getCMOs, getCMOStatistics, checkMDMEntry, exportCMOData } = require('../controllers/cmoController');
+const { getCMOs, getCMOStatistics, checkMDMEntry, exportCMOData, uploadCustomerInfo } = require('../controllers/cmoController');
 const { protect, hasRole } = require('../middleware/authMiddleware');
 
 // All CMO routes require authentication
@@ -11,6 +11,9 @@ router.get('/statistics', hasRole('Super Admin', 'Admin'), getCMOStatistics);
 
 // POST /api/cmo/check-mdm-entry — check all CMO records against Customer DB
 router.post('/check-mdm-entry', hasRole('Super Admin', 'Admin'), checkMDMEntry);
+
+// POST /api/cmo/upload-customers — upload customer info from Excel
+router.post('/upload-customers', hasRole('Super Admin', 'Admin'), uploadCustomerInfo);
 
 // GET /api/cmo/export — export all CMO records with Customer data
 router.get('/export', hasRole('Super Admin', 'Admin'), exportCMOData);
