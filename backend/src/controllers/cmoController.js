@@ -229,8 +229,12 @@ exports.exportCMOData = async (req, res) => {
 
 /**
  * POST /api/cmo/upload-customers — Proxy to CMO API POST /api/cmo/upload-customers
- * Forwards customer data from Excel upload to CMO API for insertion into SQL Server
+ * Sends data in batches of UPLOAD_BATCH_SIZE to avoid CMO API timeouts.
+ * Aggregates inserted/skipped/errors across all batches and returns a combined result.
  */
+const UPLOAD_BATCH_SIZE = 500;
+const UPLOAD_BATCH_TIMEOUT = 60000; // 60s per batch
+
 exports.uploadCustomerInfo = async (req, res) => {
   try {
     const token = await getCmoApiToken();
@@ -240,12 +244,49 @@ exports.uploadCustomerInfo = async (req, res) => {
       return res.status(400).json({ success: false, message: 'customers array is required and must not be empty' });
     }
 
-    const response = await axios.post(`${CMO_API_URL}/cmo/upload-customers`, { customers }, {
-      headers: { Authorization: `Bearer ${token}` },
-      timeout: 120000
-    });
+    const totalBatches = Math.ceil(customers.length / UPLOAD_BATCH_SIZE);
+    console.log(`CMO upload: ${customers.length} records → ${totalBatches} batches of ${UPLOAD_BATCH_SIZE}`);
 
-    return res.json(response.data);
+    let totalInserted = 0;
+    let totalSkipped = 0;
+    const allErrors = [];
+
+    for (let i = 0; i < customers.length; i += UPLOAD_BATCH_SIZE) {
+      const batch = customers.slice(i, i + UPLOAD_BATCH_SIZE);
+      const batchNum = Math.floor(i / UPLOAD_BATCH_SIZE) + 1;
+
+      try {
+        const response = await axios.post(`${CMO_API_URL}/cmo/upload-customers`, { customers: batch }, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: UPLOAD_BATCH_TIMEOUT
+        });
+
+        const result = response.data?.data || {};
+        totalInserted += result.inserted || 0;
+        totalSkipped += result.skipped || 0;
+        if (result.errors?.length) allErrors.push(...result.errors);
+
+        console.log(`CMO upload batch ${batchNum}/${totalBatches}: inserted=${result.inserted || 0}, skipped=${result.skipped || 0}`);
+      } catch (batchError) {
+        if (batchError.response?.status === 401) {
+          cachedToken = null;
+          tokenExpiry = null;
+          throw batchError; // Re-throw auth errors — no point continuing
+        }
+        const errMsg = `Batch ${batchNum}/${totalBatches} failed: ${batchError.response?.data?.message || batchError.message}`;
+        console.error(`CMO upload ${errMsg}`);
+        allErrors.push(errMsg);
+        // Continue with remaining batches even if one fails
+      }
+    }
+
+    console.log(`CMO upload complete: ${totalInserted} inserted, ${totalSkipped} skipped, ${allErrors.length} errors`);
+
+    return res.json({
+      success: true,
+      data: { inserted: totalInserted, skipped: totalSkipped, errors: allErrors },
+      message: `Upload complete. ${totalInserted} inserted, ${totalSkipped} skipped.`
+    });
   } catch (error) {
     console.error('CMO upload customers proxy error:', error.response?.data || error.message);
     if (error.response?.status === 401) {

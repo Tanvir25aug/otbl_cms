@@ -520,23 +520,39 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-          <button
-            @click="closeUploadModal"
-            class="px-5 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            @click="confirmUpload"
-            :disabled="!uploadPreviewData.length || uploading"
-            class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg v-if="uploading" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10" />
-            </svg>
-            {{ uploading ? 'Inserting...' : 'Confirm Insert' }}
-          </button>
+        <div class="p-6 border-t border-gray-200">
+          <!-- Progress Bar -->
+          <div v-if="uploadProgress" class="mb-4">
+            <div class="flex items-center justify-between text-sm text-gray-600 mb-1">
+              <span>Uploading batch {{ uploadProgress.current }} of {{ uploadProgress.total }}...</span>
+              <span>{{ Math.round((uploadProgress.current / uploadProgress.total) * 100) }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div
+                class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                :style="{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }"
+              ></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-3">
+            <button
+              @click="closeUploadModal"
+              :disabled="uploading"
+              class="px-5 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              @click="confirmUpload"
+              :disabled="!uploadPreviewData.length || uploading"
+              class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg v-if="uploading" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10" />
+              </svg>
+              {{ uploading ? `Inserting... (${uploadProgress ? uploadProgress.current + '/' + uploadProgress.total : ''})` : 'Confirm Insert' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -603,6 +619,7 @@ const uploading = ref(false);
 const uploadPreviewData = ref<any[]>([]);
 const uploadFileName = ref('');
 const uploadResult = ref<{ inserted: number; skipped: number; errors: string[] } | null>(null);
+const uploadProgress = ref<{ current: number; total: number } | null>(null);
 
 const filters = ref({
   search: '',
@@ -802,6 +819,7 @@ const clearUploadPreview = () => {
   uploadPreviewData.value = [];
   uploadFileName.value = '';
   uploadResult.value = null;
+  uploadProgress.value = null;
 };
 
 const closeUploadModal = () => {
@@ -809,18 +827,40 @@ const closeUploadModal = () => {
   clearUploadPreview();
 };
 
+const FRONTEND_BATCH_SIZE = 5000; // Send 5000 rows per HTTP request to the CMS backend
+
 const confirmUpload = async () => {
   if (!uploadPreviewData.value.length) return;
   uploading.value = true;
   uploadResult.value = null;
+  uploadProgress.value = null;
+
+  const allData = uploadPreviewData.value;
+  const totalBatches = Math.ceil(allData.length / FRONTEND_BATCH_SIZE);
+  let totalInserted = 0;
+  let totalSkipped = 0;
+  const allErrors: string[] = [];
+
   try {
-    const response = await uploadCustomerInfo(uploadPreviewData.value);
-    uploadResult.value = response.data.data || { inserted: 0, skipped: 0, errors: [] };
+    for (let i = 0; i < allData.length; i += FRONTEND_BATCH_SIZE) {
+      const batch = allData.slice(i, i + FRONTEND_BATCH_SIZE);
+      const batchNum = Math.floor(i / FRONTEND_BATCH_SIZE) + 1;
+      uploadProgress.value = { current: batchNum, total: totalBatches };
+
+      const response = await uploadCustomerInfo(batch);
+      const result = response.data.data || { inserted: 0, skipped: 0, errors: [] };
+      totalInserted += result.inserted || 0;
+      totalSkipped += result.skipped || 0;
+      if (result.errors?.length) allErrors.push(...result.errors);
+    }
+
+    uploadResult.value = { inserted: totalInserted, skipped: totalSkipped, errors: allErrors };
     uploadPreviewData.value = [];
   } catch (err: any) {
     alert(err.response?.data?.message || err.message || 'Failed to upload customer data');
   } finally {
     uploading.value = false;
+    uploadProgress.value = null;
   }
 };
 
