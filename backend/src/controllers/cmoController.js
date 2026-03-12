@@ -9,9 +9,11 @@ const CMO_API_PASSWORD = process.env.CMO_API_PASSWORD;
 // Cache the CMO API token
 let cachedToken = null;
 let tokenExpiry = null;
+let loginPromise = null; // Mutex: prevents concurrent login attempts (thundering herd)
 
 /**
- * Login to the CMO API and cache the JWT token
+ * Login to the CMO API and cache the JWT token.
+ * Uses a shared promise so concurrent requests wait for one login instead of all racing.
  */
 const getCmoApiToken = async () => {
   // Return cached token if still valid (refresh 5 min before expiry)
@@ -19,26 +21,37 @@ const getCmoApiToken = async () => {
     return cachedToken;
   }
 
-  try {
-    const response = await axios.post(`${CMO_API_URL}/auth/login`, {
-      username: CMO_API_USERNAME,
-      password: CMO_API_PASSWORD
-    });
-
-    if (response.data.success && response.data.data.accessToken) {
-      cachedToken = response.data.data.accessToken;
-      // Token typically expires in 24h, refresh after 23h
-      tokenExpiry = Date.now() + 23 * 60 * 60 * 1000;
-      return cachedToken;
-    }
-
-    throw new Error('Failed to obtain CMO API token - no accessToken in response');
-  } catch (error) {
-    console.error('CMO API login error:', error.response?.data || error.message);
-    cachedToken = null;
-    tokenExpiry = null;
-    throw new Error(`Failed to authenticate with CMO API: ${error.response?.data?.message || error.message}`);
+  // If a login is already in progress, wait for it instead of making another request
+  if (loginPromise) {
+    return loginPromise;
   }
+
+  loginPromise = (async () => {
+    try {
+      const response = await axios.post(`${CMO_API_URL}/auth/login`, {
+        username: CMO_API_USERNAME,
+        password: CMO_API_PASSWORD
+      });
+
+      if (response.data.success && response.data.data.accessToken) {
+        cachedToken = response.data.data.accessToken;
+        // Token typically expires in 24h, refresh after 23h
+        tokenExpiry = Date.now() + 23 * 60 * 60 * 1000;
+        return cachedToken;
+      }
+
+      throw new Error('Failed to obtain CMO API token - no accessToken in response');
+    } catch (error) {
+      console.error('CMO API login error:', error.response?.data || error.message);
+      cachedToken = null;
+      tokenExpiry = null;
+      throw new Error(`Failed to authenticate with CMO API: ${error.response?.data?.message || error.message}`);
+    } finally {
+      loginPromise = null; // Release mutex so future requests can retry
+    }
+  })();
+
+  return loginPromise;
 };
 
 /**
