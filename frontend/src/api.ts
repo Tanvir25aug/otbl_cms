@@ -227,7 +227,7 @@ export const deleteComplaintCategory = (id: number | string) => {
 };
 
 // --- CMO (Change Meter Owner) --- //
-export const getCMOs = (params?: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string }) => {
+export const getCMOs = (params?: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string; nocs?: string; dateFrom?: string; dateTo?: string; isMDMEntry?: string }) => {
   return apiClient.get('/cmo', { params });
 };
 

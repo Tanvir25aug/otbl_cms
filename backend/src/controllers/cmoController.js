@@ -48,7 +48,7 @@ const getCmoApiToken = async () => {
 exports.getCMOs = async (req, res) => {
   try {
     const token = await getCmoApiToken();
-    const { page, limit, isApproved, search, sortBy, sortOrder } = req.query;
+    const { page, limit, isApproved, search, sortBy, sortOrder, nocs, dateFrom, dateTo, isMDMEntry } = req.query;
 
     const params = {};
     if (page) params.page = page;
@@ -57,6 +57,10 @@ exports.getCMOs = async (req, res) => {
     if (search) params.search = search;
     if (sortBy) params.sortBy = sortBy;
     if (sortOrder) params.sortOrder = sortOrder;
+    if (nocs) params.nocs = nocs;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    if (isMDMEntry !== undefined && isMDMEntry !== '') params.isMDMEntry = isMDMEntry;
 
     const response = await axios.get(`${CMO_API_URL}/cmo/cms-list`, {
       headers: { Authorization: `Bearer ${token}` },

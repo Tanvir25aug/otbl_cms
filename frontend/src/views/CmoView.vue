@@ -108,7 +108,8 @@
         </svg>
         <h2 class="text-lg font-semibold text-gray-800">Filters</h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <!-- Row 1 -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
         <!-- Search -->
         <div class="relative md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -122,7 +123,7 @@
               v-model="filters.search"
               @input="debouncedFetch"
               type="text"
-              placeholder="Search by name, mobile, customer ID, meter ID..."
+              placeholder="Search by name, mobile, consumer ID, meter ID..."
               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
@@ -151,7 +152,7 @@
             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
           >
             <option value="CreateDate">Created Date</option>
-            <option value="CustomerId">Customer ID</option>
+            <option value="OldConsumerId">Consumer ID</option>
             <option value="InstallDate">Install Date</option>
           </select>
         </div>
@@ -182,6 +183,57 @@
               </svg>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Row 2 -->
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <!-- NOCS Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">NOCS</label>
+          <input
+            v-model="filters.nocs"
+            @input="debouncedFetch"
+            type="text"
+            placeholder="Filter by NOCS..."
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
+
+        <!-- Install Date From -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Install Date From</label>
+          <input
+            v-model="filters.dateFrom"
+            @change="fetchCMOs"
+            type="date"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          />
+        </div>
+
+        <!-- Install Date To -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Install Date To</label>
+          <input
+            v-model="filters.dateTo"
+            @change="fetchCMOs"
+            type="date"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          />
+        </div>
+
+        <!-- MDM Entry Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">MDM Entry</label>
+          <select
+            v-model="filters.isMDMEntry"
+            @change="fetchCMOs"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          >
+            <option value="">All</option>
+            <option value="1">MDM Entry Done</option>
+            <option value="0">Not Done</option>
+          </select>
         </div>
       </div>
     </div>
@@ -321,7 +373,7 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-100">
             <tr v-for="cmo in cmos" :key="cmo.Id" class="hover:bg-blue-50/50 transition-colors duration-150">
-              <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.CustomerId || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.OldConsumerId || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.CustomerName || '-' }}</td>
               <td class="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate" :title="cmo.Address || ''">{{ cmo.Address || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MobileNo || '-' }}</td>
@@ -627,7 +679,11 @@ const filters = ref({
   sortBy: 'CreateDate',
   sortOrder: 'DESC',
   page: 1,
-  limit: 20
+  limit: 20,
+  nocs: '',
+  dateFrom: '',
+  dateTo: '',
+  isMDMEntry: ''
 });
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -676,6 +732,10 @@ const fetchCMOs = async () => {
     };
     if (filters.value.search) params.search = filters.value.search;
     if (filters.value.status !== '') params.isApproved = filters.value.status;
+    if (filters.value.nocs) params.nocs = filters.value.nocs;
+    if (filters.value.dateFrom) params.dateFrom = filters.value.dateFrom;
+    if (filters.value.dateTo) params.dateTo = filters.value.dateTo;
+    if (filters.value.isMDMEntry !== '') params.isMDMEntry = filters.value.isMDMEntry;
 
     const response = await getCMOs(params);
     cmos.value = response.data.data || [];
@@ -717,7 +777,11 @@ const clearFilters = () => {
     sortBy: 'CreateDate',
     sortOrder: 'DESC',
     page: 1,
-    limit: 20
+    limit: 20,
+    nocs: '',
+    dateFrom: '',
+    dateTo: '',
+    isMDMEntry: ''
   };
   fetchCMOs();
 };
