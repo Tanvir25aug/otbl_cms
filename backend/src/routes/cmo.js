@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getCMOs, getCMOStatistics, checkMDMEntry, exportCMOData, uploadCustomerInfo } = require('../controllers/cmoController');
+const { getCMOs, getCMOStatistics, checkMDMEntry, exportCMOData, uploadCustomerInfo, getFilterOptions } = require('../controllers/cmoController');
 const { protect, hasRole } = require('../middleware/authMiddleware');
 
 // All CMO routes require authentication
@@ -8,6 +8,9 @@ router.use(protect);
 
 // GET /api/cmo/statistics — must be before any /:id route
 router.get('/statistics', hasRole('Super Admin', 'Admin'), getCMOStatistics);
+
+// GET /api/cmo/filter-options — distinct NOCS and CPC_CPR values for dropdowns
+router.get('/filter-options', hasRole('Super Admin', 'Admin'), getFilterOptions);
 
 // POST /api/cmo/check-mdm-entry — check all CMO records against Customer DB
 router.post('/check-mdm-entry', hasRole('Super Admin', 'Admin'), checkMDMEntry);

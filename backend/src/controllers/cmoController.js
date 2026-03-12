@@ -61,7 +61,7 @@ const getCmoApiToken = async () => {
 exports.getCMOs = async (req, res) => {
   try {
     const token = await getCmoApiToken();
-    const { page, limit, isApproved, search, sortBy, sortOrder, nocs, dateFrom, dateTo, isMDMEntry } = req.query;
+    const { page, limit, isApproved, search, sortBy, sortOrder, nocs, dateFrom, dateTo, isMDMEntry, cpcCpr } = req.query;
 
     const params = {};
     if (page) params.page = page;
@@ -74,6 +74,7 @@ exports.getCMOs = async (req, res) => {
     if (dateFrom) params.dateFrom = dateFrom;
     if (dateTo) params.dateTo = dateTo;
     if (isMDMEntry !== undefined && isMDMEntry !== '') params.isMDMEntry = isMDMEntry;
+    if (cpcCpr !== undefined && cpcCpr !== '') params.cpcCpr = cpcCpr;
 
     const response = await axios.get(`${CMO_API_URL}/cmo/cms-list`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -219,11 +220,16 @@ exports.checkMDMEntry = async (req, res) => {
 exports.exportCMOData = async (req, res) => {
   try {
     const token = await getCmoApiToken();
-    const { search, isApproved } = req.query;
+    const { search, isApproved, nocs, dateFrom, dateTo, isMDMEntry, cpcCpr } = req.query;
 
     const params = {};
     if (search) params.search = search;
     if (isApproved !== undefined && isApproved !== '') params.isApproved = isApproved;
+    if (nocs) params.nocs = nocs;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    if (isMDMEntry !== undefined && isMDMEntry !== '') params.isMDMEntry = isMDMEntry;
+    if (cpcCpr !== undefined && cpcCpr !== '') params.cpcCpr = cpcCpr;
 
     const response = await axios.get(`${CMO_API_URL}/cmo/cms-export`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -312,6 +318,32 @@ exports.uploadCustomerInfo = async (req, res) => {
     }
     const statusCode = error.response?.status || 500;
     const message = error.response?.data?.message || error.message || 'Failed to upload customer data';
+    return res.status(statusCode).json({ success: false, message });
+  }
+};
+
+/**
+ * GET /api/cmo/filter-options — Proxy to CMO API GET /api/cmo/filter-options
+ * Returns distinct NOCS, CPC_CPR values for dropdown filters
+ */
+exports.getFilterOptions = async (req, res) => {
+  try {
+    const token = await getCmoApiToken();
+
+    const response = await axios.get(`${CMO_API_URL}/cmo/filter-options`, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: 30000
+    });
+
+    return res.json(response.data);
+  } catch (error) {
+    console.error('CMO filter-options proxy error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      cachedToken = null;
+      tokenExpiry = null;
+    }
+    const statusCode = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'Failed to fetch filter options';
     return res.status(statusCode).json({ success: false, message });
   }
 };

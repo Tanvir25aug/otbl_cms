@@ -227,8 +227,12 @@ export const deleteComplaintCategory = (id: number | string) => {
 };
 
 // --- CMO (Change Meter Owner) --- //
-export const getCMOs = (params?: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string; nocs?: string; dateFrom?: string; dateTo?: string; isMDMEntry?: string }) => {
+export const getCMOs = (params?: { page?: number; limit?: number; status?: string; search?: string; sortBy?: string; sortOrder?: string; nocs?: string; dateFrom?: string; dateTo?: string; isMDMEntry?: string; cpcCpr?: string }) => {
   return apiClient.get('/cmo', { params });
+};
+
+export const getCMOFilterOptions = () => {
+  return apiClient.get('/cmo/filter-options');
 };
 
 export const getCMOStatistics = () => {
@@ -239,7 +243,7 @@ export const checkMDMEntry = () => {
   return apiClient.post('/cmo/check-mdm-entry');
 };
 
-export const getCMOExportData = (params?: { search?: string; isApproved?: string }) => {
+export const getCMOExportData = (params?: { search?: string; isApproved?: string; nocs?: string; dateFrom?: string; dateTo?: string; isMDMEntry?: string; cpcCpr?: string }) => {
   return apiClient.get('/cmo/export', { params });
 };
 

@@ -157,47 +157,34 @@
           </select>
         </div>
 
-        <!-- Sort Order + Clear -->
+        <!-- Clear Filters -->
         <div class="flex flex-col">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Sort Order</label>
-          <div class="flex gap-2">
-            <button
-              @click="toggleSortOrder"
-              class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-gray-700 flex items-center justify-center gap-1"
-            >
-              <svg v-if="filters.sortOrder === 'DESC'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-              </svg>
-              {{ filters.sortOrder }}
-            </button>
-            <button
-              @click="clearFilters"
-              class="px-3 py-2.5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-gray-700"
-              title="Clear Filters"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+          <button
+            @click="clearFilters"
+            class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium text-gray-700 flex items-center justify-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear Filters
+          </button>
         </div>
       </div>
 
       <!-- Row 2 -->
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <!-- NOCS Filter -->
+        <!-- NOCS Dropdown -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">NOCS</label>
-          <input
+          <select
             v-model="filters.nocs"
-            @input="debouncedFetch"
-            type="text"
-            placeholder="Filter by NOCS..."
-            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-          />
+            @change="fetchCMOs"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          >
+            <option value="">All NOCS</option>
+            <option v-for="n in nocsOptions" :key="n" :value="n">{{ n }}</option>
+          </select>
         </div>
 
         <!-- Install Date From -->
@@ -233,6 +220,19 @@
             <option value="">All</option>
             <option value="1">MDM Entry Done</option>
             <option value="0">Not Done</option>
+          </select>
+        </div>
+
+        <!-- CPC / CPR Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">CPC / CPR</label>
+          <select
+            v-model="filters.cpcCpr"
+            @change="fetchCMOs"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          >
+            <option value="">All</option>
+            <option v-for="c in cpcCprOptions" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
       </div>
@@ -375,11 +375,11 @@
             <tr v-for="cmo in cmos" :key="cmo.Id" class="hover:bg-blue-50/50 transition-colors duration-150">
               <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ cmo.OldConsumerId || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.CustomerName || '-' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate" :title="cmo.Address || ''">{{ cmo.Address || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MobileNo || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.ChangedMobileNo || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.SecondaryMobileNo || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NOCS || '-' }}</td>
+              <td class="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate" :title="(cmo as any).Address || ''">{{ (cmo as any).Address || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ (cmo as any).MobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ (cmo as any).ChangedMobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ (cmo as any).SecondaryMobileNo || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ (cmo as any).NOCS || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.InstallDate || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.NewMeterNoOCR || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.Latitude || '-' }}</td>
@@ -402,7 +402,7 @@
                 <span v-else class="text-gray-400">No</span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.MeterInstalledBy || '-' }}</td>
-              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ cmo.creator?.UserName || '-' }}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ (cmo as any).InstallerName || '-' }}</td>
               <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{{ cmo.CreateDate || '-' }}</td>
             </tr>
           </tbody>
@@ -613,7 +613,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getCMOs, getCMOStatistics, checkMDMEntry, getCMOExportData, uploadCustomerInfo } from '../api';
+import { getCMOs, getCMOStatistics, checkMDMEntry, getCMOExportData, getCMOFilterOptions, uploadCustomerInfo } from '../api';
 import * as XLSX from 'xlsx';
 
 interface CMORecord {
@@ -664,6 +664,8 @@ const error = ref('');
 const exporting = ref(false);
 const checkingMDM = ref(false);
 const mdmResult = ref<{ checked: number; foundInCustomerDB: number; updated: number } | null>(null);
+const nocsOptions = ref<string[]>([]);
+const cpcCprOptions = ref<string[]>([]);
 
 // Upload Customer Info state
 const showUploadModal = ref(false);
@@ -677,13 +679,13 @@ const filters = ref({
   search: '',
   status: '',
   sortBy: 'CreateDate',
-  sortOrder: 'DESC',
   page: 1,
   limit: 20,
   nocs: '',
   dateFrom: '',
   dateTo: '',
-  isMDMEntry: ''
+  isMDMEntry: '',
+  cpcCpr: ''
 });
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -736,6 +738,7 @@ const fetchCMOs = async () => {
     if (filters.value.dateFrom) params.dateFrom = filters.value.dateFrom;
     if (filters.value.dateTo) params.dateTo = filters.value.dateTo;
     if (filters.value.isMDMEntry !== '') params.isMDMEntry = filters.value.isMDMEntry;
+    if (filters.value.cpcCpr !== '') params.cpcCpr = filters.value.cpcCpr;
 
     const response = await getCMOs(params);
     cmos.value = response.data.data || [];
@@ -765,23 +768,18 @@ const goToPage = (page: number) => {
   fetchCMOs();
 };
 
-const toggleSortOrder = () => {
-  filters.value.sortOrder = filters.value.sortOrder === 'DESC' ? 'ASC' : 'DESC';
-  fetchCMOs();
-};
-
 const clearFilters = () => {
   filters.value = {
     search: '',
     status: '',
     sortBy: 'CreateDate',
-    sortOrder: 'DESC',
     page: 1,
     limit: 20,
     nocs: '',
     dateFrom: '',
     dateTo: '',
-    isMDMEntry: ''
+    isMDMEntry: '',
+    cpcCpr: ''
   };
   fetchCMOs();
 };
@@ -797,6 +795,11 @@ const exportToExcel = async () => {
     const exportParams: Record<string, any> = {};
     if (filters.value.search) exportParams.search = filters.value.search;
     if (filters.value.status !== '') exportParams.isApproved = filters.value.status;
+    if (filters.value.nocs) exportParams.nocs = filters.value.nocs;
+    if (filters.value.dateFrom) exportParams.dateFrom = filters.value.dateFrom;
+    if (filters.value.dateTo) exportParams.dateTo = filters.value.dateTo;
+    if (filters.value.isMDMEntry !== '') exportParams.isMDMEntry = filters.value.isMDMEntry;
+    if (filters.value.cpcCpr !== '') exportParams.cpcCpr = filters.value.cpcCpr;
 
     const response = await getCMOExportData(exportParams);
 
@@ -928,8 +931,19 @@ const confirmUpload = async () => {
   }
 };
 
+const fetchFilterOptions = async () => {
+  try {
+    const response = await getCMOFilterOptions();
+    nocsOptions.value = response.data.data?.nocs || [];
+    cpcCprOptions.value = response.data.data?.cpcCpr || [];
+  } catch (err) {
+    console.error('Failed to fetch filter options:', err);
+  }
+};
+
 onMounted(() => {
   fetchCMOs();
   fetchStatistics();
+  fetchFilterOptions();
 });
 </script>
