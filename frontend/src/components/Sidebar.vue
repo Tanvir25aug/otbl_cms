@@ -38,6 +38,9 @@
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/bill-stop">Bill Stop</router-link>
       </li>
+      <li v-if="auth.isAuthenticated && (auth.user?.role === 'Super Admin' || auth.user?.role === 'Admin' || auth.user?.role === 'Manager')">
+        <router-link class="nav-link" to="/bill-stop-report">Bill Stop Report</router-link>
+      </li>
       <li v-if="auth.isAuthenticated">
         <router-link class="nav-link" to="/customer-support-center">Customer Support</router-link>
       </li>

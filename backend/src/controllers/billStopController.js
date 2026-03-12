@@ -7,6 +7,7 @@ const MdmRead = require('../models/MdmRead');
 const MeterReading = require('../models/MeterReading');
 const Customer = require('../models/Customer');
 const LastBillDate = require('../models/LastBillDate');
+const { saveSnapshot } = require('./billStopSnapshotController');
 
 
 const uploadAndAnalyze = async (req, res) => {
@@ -624,6 +625,12 @@ const getBillStopReport = async (req, res) => {
   try {
     const summary = await computeBillStopSummary();
     res.status(200).json(summary);
+
+    // After responding, save the full customer list to OTBL_CMS asynchronously
+    getBillStopCustomerData()
+      .then(customers => saveSnapshot(customers))
+      .then(count => console.log(`BillStop snapshot saved: ${count} records to OTBL_CMS`))
+      .catch(err => console.error('BillStop snapshot save error (non-fatal):', err.message));
   } catch (error) {
     console.error('Error generating bill stop report:', error);
     res.status(500).json({ error: 'An error occurred while generating the report' });
@@ -632,100 +639,109 @@ const getBillStopReport = async (req, res) => {
 
 
 
+/**
+ * Internal function: returns the full bill stop customer array (no req/res).
+ * Used both by the HTTP handler and the snapshot auto-save.
+ */
+async function getBillStopCustomerData() {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
+  const threeMonthsAgo = new Date(currentYear, currentMonth - 2, 1);
+
+  const batchSize = 2000;
+  let offset = 0;
+  const result = [];
+
+  while (true) {
+    const customers = await Customer.findAll({
+      attributes: ['CUSTOMER_NUM', 'CUSTOMER_NAME', 'ADDRESS', 'MOBILE_NO', 'METER_NO', 'CONN_DATE', 'TARIFF'],
+      order: [['CUSTOMER_NUM', 'ASC']],
+      limit: batchSize,
+      offset
+    });
+    if (customers.length === 0) break;
+
+    const customerNums = customers.map(c => c.CUSTOMER_NUM);
+    const meterNos = customers.map(c => c.METER_NO).filter(Boolean);
+
+    const lbdRows = await LastBillDate.findAll({ where: { CUSTOMER_NUM: { [Op.in]: customerNums } } });
+    const lbdMap = new Map(lbdRows.map(r => [r.CUSTOMER_NUM, r.LAST_BILL_DATE]));
+
+    const currentMonthReads = meterNos.length > 0 ? await MeterReading.findAll({
+      where: {
+        meter_no: { [Op.in]: meterNos },
+        reading_date: { [Op.gte]: firstDayOfMonth, [Op.lt]: firstDayOfNextMonth }
+      },
+      attributes: ['meter_no'],
+      group: ['meter_no']
+    }) : [];
+    const currentMonthReadSet = new Set(currentMonthReads.map(r => r.meter_no));
+
+    const recentReadRows = meterNos.length > 0 ? await MeterReading.findAll({
+      where: {
+        meter_no: { [Op.in]: meterNos },
+        reading_date: { [Op.gte]: threeMonthsAgo, [Op.lt]: firstDayOfNextMonth }
+      },
+      attributes: ['meter_no', [sequelize.fn('strftime', '%Y-%m', sequelize.col('reading_date')), 'ym']],
+      group: ['meter_no', 'ym']
+    }) : [];
+    const meterToMonths = new Map();
+    for (const row of recentReadRows) {
+      const meter = row.get('meter_no');
+      const ym = row.get('ym');
+      if (!meterToMonths.has(meter)) meterToMonths.set(meter, new Set());
+      meterToMonths.get(meter).add(ym);
+    }
+
+    const expectedMonths = new Set();
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(currentYear, currentMonth - i, 1);
+      expectedMonths.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    for (const c of customers) {
+      const lastBillDate = lbdMap.get(c.CUSTOMER_NUM) || null;
+      const isBillStop = !lastBillDate || (new Date(lastBillDate).getMonth() !== currentMonth || new Date(lastBillDate).getFullYear() !== currentYear);
+      if (!isBillStop) continue;
+
+      const hasCurrentMonthRead = c.METER_NO ? currentMonthReadSet.has(c.METER_NO) : false;
+      const months = c.METER_NO ? (meterToMonths.get(c.METER_NO) || new Set()) : new Set();
+      let coverage = 'NO_COVERAGE';
+      if (months.size === 0) coverage = 'NO_COVERAGE';
+      else if (months.size === expectedMonths.size && [...expectedMonths].every(m => months.has(m))) coverage = 'COMPLETE_COVERAGE';
+      else coverage = 'PARTIAL_COVERAGE';
+
+      const conn = c.CONN_DATE ? new Date(c.CONN_DATE) : null;
+      const installedThisMonthNoBill = !!(conn && conn.getMonth() === currentMonth && conn.getFullYear() === currentYear);
+
+      result.push({
+        CUSTOMER_NUM: c.CUSTOMER_NUM,
+        CUSTOMER_NAME: c.CUSTOMER_NAME,
+        ADDRESS: c.ADDRESS,
+        MOBILE_NO: c.MOBILE_NO,
+        METER_NO: c.METER_NO,
+        CONN_DATE: c.CONN_DATE,
+        TARIFF: c.TARIFF,
+        LAST_BILL_DATE: lastBillDate,
+        hasCurrentMonthRead,
+        coverage,
+        installedThisMonthNoBill
+      });
+    }
+
+    offset += customers.length;
+  }
+
+  return result;
+}
+
 // Detailed list of bill stop customers with last bill date and basic info
 const getBillStopCustomers = async (req, res) => {
   try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
-    const firstDayOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
-    const threeMonthsAgo = new Date(currentYear, currentMonth - 2, 1);
-
-    const batchSize = 2000;
-    let offset = 0;
-    const result = [];
-
-    while (true) {
-      const customers = await Customer.findAll({
-        attributes: ['CUSTOMER_NUM', 'CUSTOMER_NAME', 'ADDRESS', 'MOBILE_NO', 'METER_NO', 'CONN_DATE', 'TARIFF'],
-        order: [['CUSTOMER_NUM', 'ASC']],
-        limit: batchSize,
-        offset
-      });
-      if (customers.length === 0) break;
-
-      const customerNums = customers.map(c => c.CUSTOMER_NUM);
-      const meterNos = customers.map(c => c.METER_NO).filter(Boolean);
-
-      const lbdRows = await LastBillDate.findAll({ where: { CUSTOMER_NUM: { [Op.in]: customerNums } } });
-      const lbdMap = new Map(lbdRows.map(r => [r.CUSTOMER_NUM, r.LAST_BILL_DATE]));
-
-      const currentMonthReads = meterNos.length > 0 ? await MeterReading.findAll({
-        where: {
-          meter_no: { [Op.in]: meterNos },
-          reading_date: { [Op.gte]: firstDayOfMonth, [Op.lt]: firstDayOfNextMonth }
-        },
-        attributes: ['meter_no'],
-        group: ['meter_no']
-      }) : [];
-      const currentMonthReadSet = new Set(currentMonthReads.map(r => r.meter_no));
-
-      const recentReadRows = meterNos.length > 0 ? await MeterReading.findAll({
-        where: {
-          meter_no: { [Op.in]: meterNos },
-          reading_date: { [Op.gte]: threeMonthsAgo, [Op.lt]: firstDayOfNextMonth }
-        },
-        attributes: ['meter_no', [sequelize.fn('strftime', '%Y-%m', sequelize.col('reading_date')), 'ym']],
-        group: ['meter_no', 'ym']
-      }) : [];
-      const meterToMonths = new Map();
-      for (const row of recentReadRows) {
-        const meter = row.get('meter_no');
-        const ym = row.get('ym');
-        if (!meterToMonths.has(meter)) meterToMonths.set(meter, new Set());
-        meterToMonths.get(meter).add(ym);
-      }
-
-      const expectedMonths = new Set();
-      for (let i = 0; i < 3; i++) {
-        const d = new Date(currentYear, currentMonth - i, 1);
-        expectedMonths.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-      }
-
-      for (const c of customers) {
-        const lastBillDate = lbdMap.get(c.CUSTOMER_NUM) || null;
-        const isBillStop = !lastBillDate || (new Date(lastBillDate).getMonth() !== currentMonth || new Date(lastBillDate).getFullYear() !== currentYear);
-        if (!isBillStop) continue;
-
-        const hasCurrentMonthRead = c.METER_NO ? currentMonthReadSet.has(c.METER_NO) : false;
-        const months = c.METER_NO ? (meterToMonths.get(c.METER_NO) || new Set()) : new Set();
-        let coverage = 'NO_COVERAGE';
-        if (months.size === 0) coverage = 'NO_COVERAGE';
-        else if (months.size === expectedMonths.size && [...expectedMonths].every(m => months.has(m))) coverage = 'COMPLETE_COVERAGE';
-        else coverage = 'PARTIAL_COVERAGE';
-
-        const conn = c.CONN_DATE ? new Date(c.CONN_DATE) : null;
-        const installedThisMonthNoBill = !!(conn && conn.getMonth() === currentMonth && conn.getFullYear() === currentYear);
-
-        result.push({
-          CUSTOMER_NUM: c.CUSTOMER_NUM,
-          CUSTOMER_NAME: c.CUSTOMER_NAME,
-          ADDRESS: c.ADDRESS,
-          MOBILE_NO: c.MOBILE_NO,
-          METER_NO: c.METER_NO,
-          CONN_DATE: c.CONN_DATE,
-          TARIFF: c.TARIFF,
-          LAST_BILL_DATE: lastBillDate,
-          hasCurrentMonthRead,
-          coverage,
-          installedThisMonthNoBill
-        });
-      }
-
-      offset += customers.length;
-    }
-
+    const result = await getBillStopCustomerData();
     res.status(200).json({ customers: result });
   } catch (error) {
     console.error('Error fetching bill stop customers:', error);

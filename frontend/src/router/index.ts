@@ -53,6 +53,7 @@ const router = createRouter({
         { path: 'data-upload', name: 'data-upload', component: () => import('../views/DataUploadView.vue'), meta: { roles: ['Super Admin', 'Admin'] } },
         { path: 'data-fetching', name: 'data-fetching', component: () => import('../views/DataFetchingView.vue') },
         { path: 'bill-stop', name: 'bill-stop', component: () => import('../views/BillStopView.vue') },
+        { path: 'bill-stop-report', name: 'bill-stop-report', component: () => import('../views/BillStopReportView.vue'), meta: { roles: ['Super Admin', 'Admin', 'Manager'] } },
         { path: 'users/create', name: 'user-create', component: () => import('../views/UserCreateView.vue'), meta: { roles: ['Super Admin', 'Admin'] } },
         { path: 'meter-replacement', name: 'meter-replacement', component: () => import('../views/MeterReplacementView.vue'), meta: { roles: ['Super Admin', 'Admin', 'Manager'] } },
         { path: 'batch-report', name: 'batch-operational-report', component: () => import('../views/BatchOperationalReportView.vue'), meta: { roles: ['Super Admin', 'Admin', 'Manager'] } },

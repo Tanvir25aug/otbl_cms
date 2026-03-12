@@ -250,3 +250,20 @@ export const getCMOExportData = (params?: { search?: string; isApproved?: string
 export const uploadCustomerInfo = (data: any[]) => {
   return apiClient.post('/cmo/upload-customers', { customers: data });
 };
+
+// --- Bill Stop Snapshot (OTBL_CMS SQL Server) --- //
+export const getBillStopSnapshot = (params?: {
+  page?: number;
+  limit?: number;
+  coverage?: string;
+  tariff?: string;
+  search?: string;
+  hasRead?: string;
+  installed?: string;
+}) => {
+  return apiClient.get('/bill-stop/snapshot', { params });
+};
+
+export const getBillStopSnapshotSummary = () => {
+  return apiClient.get('/bill-stop/snapshot/summary');
+};

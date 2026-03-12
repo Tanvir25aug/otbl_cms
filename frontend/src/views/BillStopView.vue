@@ -21,7 +21,16 @@
         <button class="btn btn--outline" @click="downloadBillStopList" :disabled="isDownloading">
           Download Bill Stop Customers (Excel)
         </button>
-        
+        <router-link to="/bill-stop-report" class="btn btn--info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+          View Report
+        </router-link>
       </div>
     </div>
 
@@ -1148,6 +1157,18 @@ const generateCSV = (results: any[]) => {
 .btn--success {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   border: none;
+  color: white;
+}
+
+.btn--info {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  border: none;
+  color: white;
+  text-decoration: none;
+}
+
+.btn--info:hover {
+  background: linear-gradient(135deg, #36d46a 0%, #2ce8c3 100%);
   color: white;
 }
 
