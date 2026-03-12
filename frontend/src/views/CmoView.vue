@@ -730,7 +730,7 @@ const fetchCMOs = async () => {
       page: filters.value.page,
       limit: filters.value.limit,
       sortBy: filters.value.sortBy,
-      sortOrder: filters.value.sortOrder
+      sortOrder: 'DESC'
     };
     if (filters.value.search) params.search = filters.value.search;
     if (filters.value.status !== '') params.isApproved = filters.value.status;
